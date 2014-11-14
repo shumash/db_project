@@ -6,6 +6,7 @@ import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
@@ -13,36 +14,57 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.Timer;
 
+/**
+ * Encapsulates low-level image utilities, mostly as static methods.
+ */
 public class ImageUtils {
-	public static BufferedImage loadImage(String args) {
+	
+	/**
+	 * Loads image from filename.
+	 * @param filename
+	 * @return image if succeeded
+	 * @throws IOException
+	 */
+	public static BufferedImage loadImage(String filename) throws IOException {
 		BufferedImage img = null;
-		try {
-		    img = ImageIO.read(new File(args));
-		} catch (IOException e) {
-			System.out.println(e.toString());
-		}
+		img = ImageIO.read(new File(filename));
 		return img;
 	}
 	
+	/**
+	 * Loads image from a url.
+	 * @param url fully specified url
+	 * @return image if successful
+	 * @throws IOException
+	 */
+	public static BufferedImage loadWebImage(String url) throws IOException {
+		BufferedImage img = null;
+		img = ImageIO.read(new URL(url));
+		return img;
+	}
+	
+	/**
+	 * Creates a popup with an image.
+	 * Note: popup may be hidden by current window.
+	 * @param image must be non-null image
+	 */
 	public static void showImage(Image image) {
 		JFrame f = new JFrame();
-	    Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize(); //this is your screen size
-
-	    //f.setUndecorated(true); //removes the surrounding border
 	    f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	    ImageIcon icon = new ImageIcon(image);
-	    JLabel lbl = new JLabel(icon); //puts the image into a jlabel
-	    f.getContentPane().add(lbl); //puts label inside the jframe
-
-	    f.setSize(icon.getIconWidth(), icon.getIconHeight()); //gets h and w of image and sets jframe to the size
-
-	    int x = (screenSize.width - f.getSize().width)/2; //These two lines are the dimensions
-	    int y = (screenSize.height - f.getSize().height)/2;//of the center of the screen
-
-	    f.setLocation(x, y); //sets the location of the jframe
-	    f.setVisible(true); //makes the jframe visible
+	    JLabel lbl = new JLabel(icon);
+	    f.getContentPane().add(lbl);
+	    f.setSize(icon.getIconWidth(), icon.getIconHeight()); 
 	    
+	    // Position in the center
+	    Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+	    int x = (screenSize.width - f.getSize().width)/2;
+	    int y = (screenSize.height - f.getSize().height)/2;
+	    f.setLocation(x, y);
 	    
+	    f.setVisible(true);
+	    
+	    // TODO: make it pop up to the top
 	    //Timer t = new Timer(3000,new ActionListener(){
           //  @Override
             //public void actionPerformed(ActionEvent arg0) {
