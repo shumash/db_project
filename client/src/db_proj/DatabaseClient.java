@@ -10,6 +10,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Vector;
 
 import javax.imageio.ImageIO;
 
@@ -142,7 +143,7 @@ public class DatabaseClient {
 		ps.close();
 		return res;
 	}
-	
+
 	public int getPatchTableSize() throws SQLException{
 		PreparedStatement ps = conn.prepareStatement("SELECT COUNT(*) FROM patches");
 		ResultSet rs = ps.executeQuery();
@@ -156,8 +157,9 @@ public class DatabaseClient {
 		return size;
 	}
 
-	public void patchify(BufferedImage image, String patchSize) throws SQLException, IOException {
+	public Vector patchify(BufferedImage image, String patchSize) throws SQLException, IOException {
 		int pSize = 0;
+		Vector retVec = new Vector();
 		try { 
 			pSize = Integer.parseInt(patchSize); 
 		} catch(NumberFormatException e) { 
@@ -172,8 +174,8 @@ public class DatabaseClient {
 			throw new RuntimeException("patch size not a factor of image height");
 		}
 		int numPatches = this.getPatchTableSize();
-		
-		
+
+
 		int horPatches = image.getWidth() / pSize;
 		int vertPatches = image.getHeight() / pSize;
 		for (int i = 0; i < horPatches; i++){
@@ -184,12 +186,13 @@ public class DatabaseClient {
 						j * vertPatches, 
 						pSize, 
 						pSize);
-				
+
 				ByteArrayOutputStream os = new ByteArrayOutputStream();
 				ImageIO.write(patch,"png", os); 
 				InputStream fis = new ByteArrayInputStream(os.toByteArray());
 				PreparedStatement ps = conn.prepareStatement("INSERT INTO patches VALUES (?, ?)");
 				numPatches++;
+				retVec.add(new Integer(numPatches));
 				ps.setInt(1, numPatches);
 				ps.setBinaryStream(2, fis, (int)os.toByteArray().length);
 				ps.executeUpdate();
@@ -198,16 +201,20 @@ public class DatabaseClient {
 			}
 		}
 
+		return retVec;
 
+	}
 
-
-
-
-
-
-
-
-		
+	public void storePointers(Vector patchNumbers, String imgName) throws SQLException {
+		for (int i = 0; i < patchNumbers.size(); i++){
+			Object o = patchNumbers.get(i);
+			Integer num  = (Integer)o;
+			PreparedStatement ps = conn.prepareStatement("INSERT INTO patch_pointers VALUES (?, ?)");
+			ps.setString(1, imgName);
+			ps.setInt(2, num.intValue());
+			ps.executeUpdate();
+			ps.close();
+		}
 
 	}
 }

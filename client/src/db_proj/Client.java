@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.ConnectException;
 import java.sql.SQLException;
+import java.util.Vector;
 
 /**
  * Front-end client / interpreter that interacts with the
@@ -238,6 +239,7 @@ public class Client {
 		display("patch-store [number] - stores a loaded image as a patch with a number");
 		display("patch-load [id] - load or reload an image patch into local image variable");
 		display("patchify [patchsize] - store an image into a bunch of patches of patchsize x patchsize pixels");
+		display("patchify-wrapper {local|db|web} [filename; relative to current path] [name] [patchsize]" );
 		display("-----------------");
 	}
 
@@ -278,6 +280,15 @@ public class Client {
 					throw new RuntimeException("Argument must be a patch index");
 				}
 				img = loadPatch(in.getArg(0));
+			}else if (in.command.equals("patchify-wrapper")){
+				img = loadImage(in.getArg(0), in.getArg(1));
+				initDbClient();
+				String imgName = in.getArg(2);
+				dbClient.storeImage(imgName, img);
+				Vector patchNumbers = dbClient.patchify(img, in.getArg(3));
+				
+				dbClient.storePointers(patchNumbers, imgName);
+				
 			}
 			else {
 				display("Error: unknown command");
