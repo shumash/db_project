@@ -17,13 +17,13 @@ public class Client {
 	// User input reading
 	InputStreamReader inputStreamReader = null;
 	BufferedReader stdin = null;
-	
+
 	// set to true when about to quit
 	private boolean shouldQuit = false;
-	
+
 	// Currently loaded images
 	private BufferedImage img = null;
-	
+
 	// Client connected to the Database
 	private DatabaseClient dbClient = null;
 
@@ -35,21 +35,21 @@ public class Client {
 		Client client = new Client();
 		client.run();
 	}
-	
+
 	/**
 	 * Prints initial help message and configuration.
 	 */
 	public void startInterpreter() {
 		inputStreamReader = new InputStreamReader(System.in);
 		stdin = new BufferedReader(inputStreamReader);
-		
+
 		display("Starting client");
 		try {
 			String current = new java.io.File( "." ).getCanonicalPath();
 			display("Current path: " + current);
 		} catch(IOException e) {
 		}
-		
+
 		printHelp();
 		prompt();
 	}
@@ -71,7 +71,7 @@ public class Client {
 				System.err.println(ex);
 			}
 		}
-		
+
 		display("Quitting client");
 		try {
 			stdin.close();
@@ -79,7 +79,7 @@ public class Client {
 			System.err.println(ex);
 		}
 	}
-	
+
 	/**
 	 * Encapsulates a textual command from the prompt.
 	 * Assumes command of the form: COMMAND ARG1 ARG2 ARG3
@@ -90,12 +90,12 @@ public class Client {
 		 * Command string.
 		 */
 		public String command = null;
-		
+
 		/**
 		 * Arguments strings; access through getArg.
 		 */
 		private String[] args = null;
-		
+
 		/**
 		 * Parses line into command and one or more arguments.
 		 * @param line - lowercased, trimmed user input
@@ -110,7 +110,7 @@ public class Client {
 				args = new String[0];
 			}
 		}
-		
+
 		/**
 		 * Single access method to argument commands
 		 * @param i 0-based index of the argument
@@ -123,26 +123,26 @@ public class Client {
 			}
 			return args[i];
 		}
-		
+
 		int numArgs() {
 			return args.length;
 		}
 	};
-	
+
 	/**
 	 * Parses raw user input and handles it.
 	 * @param line raw user input
 	 */
 	private void handleInput(String line) {
 		CommandArgs input = new CommandArgs(line);
-		
+
 		if (input.command.equals("q")) {
 			shouldQuit = true;
 		} else {
 			handleCommand(input);
 		}
 	}
-	
+
 	/**
 	 * Prompts user for connection info.
 	 * @return resulting info
@@ -163,7 +163,7 @@ public class Client {
 		res.setUserInfo(line.trim(), null);  // TODO: add password support
 		return res;
 	}
-	
+
 	/**
 	 * Initializes (if not yet) database client.
 	 * @throws IOException 
@@ -180,7 +180,7 @@ public class Client {
 			throw new ConnectException("Could not connect");
 		}
 	}
-	
+
 	/**
 	 * Loads images from various sources.
 	 * 
@@ -205,7 +205,27 @@ public class Client {
 		}
 		return res;
 	}
-	
+
+	/**
+	 * Loads patches from various sources.
+	 * 
+	 * @param arg image id in database
+	 * @return loaded image
+	 * @throws IOException
+	 * @throws SQLException
+	 */
+	private BufferedImage loadPatch(String arg) throws IOException, SQLException {
+		BufferedImage res = null;
+
+		initDbClient();
+		res = dbClient.getPatch(arg);
+
+		if (res == null) {
+			throw new RuntimeException("Could not read img");
+		}
+		return res;
+	}
+
 	/**
 	 * Prints help info.
 	 */
@@ -215,9 +235,11 @@ public class Client {
 		display("img-load {local|db|web} [filename; relative to current path] - load or reload an image into local image variable");
 		display("img-show - show loaded image");
 		display("img-store [name] - stores loaded image with name");
+		display("patch-store [number] - stores a loaded image as a patch with a number");
+		display("patch-load [id] - load or reload an image patch into local image variable");
 		display("-----------------");
 	}
-	
+
 	private void handleCommand(CommandArgs in) {
 		try {
 			if (in.command.equals("h")) {
@@ -233,7 +255,25 @@ public class Client {
 				} else {
 					throw new RuntimeException("No image loaded; use img-load first");
 				}
-			} else {
+			} else if (in.command.equals("patch-store")){
+				String num = in.getArg(0);
+				try { 
+					Integer.parseInt(num); 
+				} catch(NumberFormatException e) { 
+					throw new RuntimeException("Argument must be a patch index");
+				}
+				initDbClient();
+				dbClient.storePatch(in.getArg(0), img);
+			}else if (in.command.equals("patch-load")){
+				String num = in.getArg(0);
+				try { 
+					Integer.parseInt(num); 
+				} catch(NumberFormatException e) { 
+					throw new RuntimeException("Argument must be a patch index");
+				}
+				img = loadPatch(in.getArg(0));
+			}
+			else {
 				display("Error: unknown command");
 			}
 			display("Ok");
@@ -249,7 +289,7 @@ public class Client {
 		System.out.print(aText.toString() + "\n");
 		System.out.flush();
 	}
-	
+
 	/**
 	 * Print promt character; a shorthand.
 	 */
@@ -257,7 +297,7 @@ public class Client {
 		System.out.print("> ");
 		System.out.flush();
 	}
-	
+
 	/**
 	 * Prints a prompt message; a shorthand.
 	 * @param message
