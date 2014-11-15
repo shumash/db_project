@@ -237,6 +237,7 @@ public class Client {
 		display("img-store [name] - stores loaded image with name");
 		display("patch-store [number] - stores a loaded image as a patch with a number");
 		display("patch-load [id] - load or reload an image patch into local image variable");
+		display("patchify [patchsize] - store an image into a bunch of patches of patchsize x patchsize pixels");
 		display("-----------------");
 	}
 
@@ -264,7 +265,12 @@ public class Client {
 				}
 				initDbClient();
 				dbClient.storePatch(in.getArg(0), img);
-			}else if (in.command.equals("patch-load")){
+			}else if (in.command.equals("patchify")){
+				String patchSize = in.getArg(0);
+				initDbClient();
+				dbClient.patchify(img, patchSize);
+			}
+			else if (in.command.equals("patch-load")){
 				String num = in.getArg(0);
 				try { 
 					Integer.parseInt(num); 

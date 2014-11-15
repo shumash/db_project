@@ -26,20 +26,20 @@ import javax.imageio.ImageIO;
 public class DatabaseClient {
 	// Reference: http://jdbc.postgresql.org/documentation/91/connect.html
 	//            http://jdbc.postgresql.org/documentation/91/binary-data.html
-	
+
 	Connection conn = null;
-	
+
 	// TODO: add initialization info that configures table to which
 	// images are added, etc.
 	DatabaseClient() {}
-	
+
 	/**
 	 * @return true if the server has a valid connection.
 	 */
 	public boolean connected() {
 		return conn != null;
 	}
-	
+
 	/**
 	 * If connected, disconnects.
 	 */
@@ -53,7 +53,7 @@ public class DatabaseClient {
 			conn = null;
 		}
 	}
-	
+
 	/**
 	 * Connects or reconnects to the database
 	 * @param cInfo full connection info
@@ -70,7 +70,7 @@ public class DatabaseClient {
 		}
 		return conn != null;
 	}
-	
+
 	/** 
 	 * SUPER SIMPLE DEBUG VERSION! 
 	 * TODO: fix!
@@ -91,7 +91,7 @@ public class DatabaseClient {
 		ps.close();
 		fis.close();
 	}
-	
+
 	/**
 	 * SUPER SIMPLE DEBUG VERSION! 
 	 * TODO: fix!
@@ -106,9 +106,9 @@ public class DatabaseClient {
 		ResultSet rs = ps.executeQuery();
 		BufferedImage res = null;
 		if (rs.next()) {
-		    byte[] imgBytes = rs.getBytes(1);
-		    InputStream in = new ByteArrayInputStream(imgBytes);
-		    res = ImageIO.read(in);
+			byte[] imgBytes = rs.getBytes(1);
+			InputStream in = new ByteArrayInputStream(imgBytes);
+			res = ImageIO.read(in);
 		}
 		rs.close();
 		ps.close();
@@ -125,7 +125,7 @@ public class DatabaseClient {
 		ps.executeUpdate();
 		ps.close();
 		fis.close();
-		
+
 	}
 
 	public BufferedImage getPatch(String num) throws NumberFormatException, SQLException, IOException {
@@ -134,12 +134,80 @@ public class DatabaseClient {
 		ResultSet rs = ps.executeQuery();
 		BufferedImage res = null;
 		if (rs.next()) {
-		    byte[] imgBytes = rs.getBytes(1);
-		    InputStream in = new ByteArrayInputStream(imgBytes);
-		    res = ImageIO.read(in);
+			byte[] imgBytes = rs.getBytes(1);
+			InputStream in = new ByteArrayInputStream(imgBytes);
+			res = ImageIO.read(in);
 		}
 		rs.close();
 		ps.close();
 		return res;
+	}
+	
+	public int getPatchTableSize() throws SQLException{
+		PreparedStatement ps = conn.prepareStatement("SELECT COUNT(*) FROM patches");
+		ResultSet rs = ps.executeQuery();
+		BufferedImage res = null;
+		int size = 0;
+		if (rs.next()) {
+			size = rs.getInt(1);
+		}
+		rs.close();
+		ps.close();
+		return size;
+	}
+
+	public void patchify(BufferedImage image, String patchSize) throws SQLException, IOException {
+		int pSize = 0;
+		try { 
+			pSize = Integer.parseInt(patchSize); 
+		} catch(NumberFormatException e) { 
+			throw new RuntimeException("Argument must be a patch index");
+		}
+		int iw = image.getWidth();
+		if (iw % pSize != 0){
+			throw new RuntimeException("patch size not a factor of image width");
+		}
+		int ih = image.getHeight();
+		if (ih % pSize != 0){
+			throw new RuntimeException("patch size not a factor of image height");
+		}
+		int numPatches = this.getPatchTableSize();
+		
+		
+		int horPatches = image.getWidth() / pSize;
+		int vertPatches = image.getHeight() / pSize;
+		for (int i = 0; i < horPatches; i++){
+			for (int j = 0; j < vertPatches; j++){
+				//first create the subpatch
+
+				BufferedImage patch = image.getSubimage(i * horPatches, 
+						j * vertPatches, 
+						pSize, 
+						pSize);
+				
+				ByteArrayOutputStream os = new ByteArrayOutputStream();
+				ImageIO.write(patch,"png", os); 
+				InputStream fis = new ByteArrayInputStream(os.toByteArray());
+				PreparedStatement ps = conn.prepareStatement("INSERT INTO patches VALUES (?, ?)");
+				numPatches++;
+				ps.setInt(1, numPatches);
+				ps.setBinaryStream(2, fis, (int)os.toByteArray().length);
+				ps.executeUpdate();
+				ps.close();
+				fis.close();
+			}
+		}
+
+
+
+
+
+
+
+
+
+
+		
+
 	}
 }
