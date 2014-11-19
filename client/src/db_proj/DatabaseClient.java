@@ -71,6 +71,24 @@ public class DatabaseClient {
 		}
 		return conn != null;
 	}
+	
+	
+	private class PointerData{
+		
+		public Integer patchNum;
+		public Integer x;
+		public Integer y;
+		
+		public PointerData(Integer patchNum, Integer x, Integer y){
+			this.patchNum = patchNum;
+			this.x = x;
+			this.y = y;
+		}
+		
+	}
+	
+	
+	
 
 	/** 
 	 * SUPER SIMPLE DEBUG VERSION! 
@@ -192,7 +210,7 @@ public class DatabaseClient {
 				InputStream fis = new ByteArrayInputStream(os.toByteArray());
 				PreparedStatement ps = conn.prepareStatement("INSERT INTO patches VALUES (?, ?)");
 				numPatches++;
-				retVec.add(new Integer(numPatches));
+				retVec.add(new PointerData(new Integer(numPatches), new Integer(i), new Integer(j)));
 				ps.setInt(1, numPatches);
 				ps.setBinaryStream(2, fis, (int)os.toByteArray().length);
 				ps.executeUpdate();
@@ -208,10 +226,12 @@ public class DatabaseClient {
 	public void storePointers(Vector patchNumbers, String imgName) throws SQLException {
 		for (int i = 0; i < patchNumbers.size(); i++){
 			Object o = patchNumbers.get(i);
-			Integer num  = (Integer)o;
-			PreparedStatement ps = conn.prepareStatement("INSERT INTO patch_pointers VALUES (?, ?)");
+			PointerData pd  = (PointerData)o;
+			PreparedStatement ps = conn.prepareStatement("INSERT INTO patch_pointers VALUES (?, ?, ?, ?)");
 			ps.setString(1, imgName);
-			ps.setInt(2, num.intValue());
+			ps.setInt(2, pd.patchNum.intValue());
+			ps.setInt(3, pd.x.intValue());
+			ps.setInt(4, pd.y.intValue());
 			ps.executeUpdate();
 			ps.close();
 		}
