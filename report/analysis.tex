@@ -1,0 +1,28 @@
+\section{Analysis}\label{sec:analysis}
+
+\subsection{Quality Metrics}\label{ssec:qual-met}
+There are many possible formulations of these quality constraints; we detail those that we considered for this paper in section TODO.  Beyond mathematical metrics, subjective methods are also interesting to consider for formulating the quality constraints; one could imagine a scenario in which image quality is assessed by humans through a crowdsourced system, perhaps using an engine such as Amazon's Mechanical Turk TODO: cite.  We consider such subjective similarity metrics outside the scope of this paper and focus on the mathematical metrics for now.
+
+%We wish to construct a database that trades off minimizing the amount of required space with maximizing read and write speeds of the data.
+
+\subsection{Patch Size}
+
+TODO(Zoya,Andrew): tradeoffs for patch size
+
+Assume for now that we choose to store $p$ patches in our auxiliary table.  In practice, we choose $p$ to be a function $p \colon Function \to \mathds{N}$ which maps from our similarity metric to a number of patches to store.  Assume also that each patch is square and composed of $n^2$ pixels, where $n$ is a user defined parameter.  We further assume that each pixel requires 8 bytes to store  and that each pointer is 8 bytes (a standard integer for a 64-bit system).  Under this "image only" scheme, in the case where we have $i$ images, the cost $c_i$ to store all the images in our database is:
+
+\begin{equation}
+	c_i(i, m) = 8  i  m^2
+\end{equation}
+
+In the case where we store pointers to patches, we have two tables: one table to store pointers to image patch exemplars, and a second table to store the exemplar data themselves.  Under this "patch pointer"scheme, in the case where we have $i$ images and $p$ patches, the cost $c_p$ to store all the images in our database is:
+
+\begin{equation}
+	c_p(i, p, m, n) = 8 i (\frac{m}{n})^2 + 8  p  n^2
+\end{equation}.
+
+The first term is the cost of storing the pointer data, while the second term is the cost of storing the patch exemplars themselves.
+
+\subsection{Similarity Threshold}
+
+TODO: tradeoffs for similarity threshold

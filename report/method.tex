@@ -1,0 +1,106 @@
+\section{Method}\label{sec:method}
+
+To limit the complexity, we assume
+each image to be a square of $m^2$ pixels, and for all patches to
+be squares of the same size.
+We formally describe our method in Sec.~\ref{ssec:overview}. To summarize,
+we first segment each image into patches and store them in the \texttt{patches} database.
+Only patches sufficiently different
+from all the patches in \texttt{patches} are stored (See Sec.~\ref{ssec:sim}).
+Instead of storing each image explicitly, we approximate it by storing pointers to the patches
+approximating its original patches. In Sec.~\ref{ssec:lsh}, we describe the
+search algorithm used to quickly retrieve similar patches, and in Sec.~\ref{ssec:reconst}
+we detail the indices that make image reconstruction faster. Finally, in
+Sec.~\ref{ssec:impl} we provide implementation details.
+
+\subsection{Overview}\label{ssec:overview}
+
+Our method is governed by the following parameters:
+\begin{itemize}
+\item $n$ - width and height of all patches\footnote{We assume that $m \mod n$ is $0$.}
+\item $S$ - similarity function from two $n \times n$ images to $\mathbb{R}$
+\item $T$ - similarity threshold
+\end{itemize}
+The $n \times n$ patches are stored as byte data in the \texttt{patches} table.
+To allow image reconstruction, we also store $(m / n)^2$ patch pointers for
+each image in the \texttt{patch\_pointers} table. The full schema looks as follows:
+\begin{verbatim}
+patches(id int PRIMARY KEY,
+        patch bytea);
+
+images(imgid int PRIMARY KEY);
+
+patch_pointers(imgid int REFERENCES images(imgid),
+               patch_id int REFERENCES patches(id),
+               x int,
+               y int);
+\end{verbatim}
+where \texttt{patch\_pointers.x} and \texttt{patch\_pointers.y}
+refer to the left top corner location of each patch in the image.
+
+Given these tables, inserting an image into the database proceeds as follows:
+
+\begin{algorithm}
+    \caption{Insert Image $I$ into database}
+    \label{alg:insert}
+\begin{algorithmic}[1]
+\State $Patches \leftarrow $ \texttt{CutIntoPatches}(I, patch\_size=$n$)
+\For{$P$ in $Patches$}
+\State $SimPat \leftarrow $\texttt{FindLikelySimilarPatches}($P$)
+\State $P_{closest} \leftarrow $ $argmin \{ S(P, P_i) \}$
+\If $S(P, P_i) > T$
+\State \texttt{insert} $P$ into \texttt{patches}
+\EndIf
+\EndFor
+\vspace{3mm}
+\end{algorithmic}
+\end{algorithm}
+Sections \ref{ssec:sim} and \ref{ssec:lsh} detail similarity measure and
+finding patches that are likely to be similar.
+
+In order to reconstruct an image from that patches, we run the following
+procedure:
+
+
+
+\subsection{Patch Similarity}\label{ssec:sim}
+There are many image similarity metrics that have been developed for
+images (See~\cite{yasmin2013use} for a good survey.), and
+our method is applicable to any metric that involves Euclidean
+distance over image features, its stacked RGB pixel values
+in the simplest case.
+
+For the purpose of this project, we choose to use squared Euclidean
+distance over (CIE)LUV color space, which is known to be more perceptually
+uniform than the standard RGB color space~\cite{kekre2012performance}.
+Given two $n \times n$ patches $P_1$ and $P_2$, we stack $3 \times n^2$ LUV pixel values
+into vectors $p_1$ and $p_2$, and evaluate similarity $S$ as follows:
+\begin{displaymath}
+S(P_1, P_2) = \frac{||p_1 - p_2||^2}{n^2}
+\end{displaymath}
+where $||\cdot||$ denotes standard Euclidean norm.
+We normalize by the dimensionality of the space to allow us to keep the
+similarity threshold $T$ independent of the patch size.
+
+The use of Euclidean distance for patch similarity
+allows us to use Locality Sensitive Hashing to retreive patches
+that are likely to be similar, as detailed in the
+next section.
+
+\subsection{LSH for Patches}\label{ssec:lsh}
+
+\subsection{Image Reconstruction}\label{ssec:reconst}
+
+In order to reconstruct images quickly, we
+
+\subsection{Implementation}\label{ssec:impl}
+We used $postgresql$ to construct our database, and used
+Java API to talk to the database from a custom executable. Locality
+sensitive hashing, image segmentation and reconstruction were
+all implemented in Java, and used to construct a hash table
+on patches in $postbresql$.
+
+Our code is available at:
+\begin{verbatim}
+https://github.com/shumash/db_project
+\end{verbatim}

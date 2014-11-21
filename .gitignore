@@ -1,0 +1,20 @@
+# JAVA temps and SYSTEM-specific files #
+########################################
+*.classpath
+*.project
+*.class
+*.metadata*
+
+# Backup files #
+######################
+*~
+*#*
+
+# LATEX intermediate files #
+############################
+*.aux
+*.log
+*.bbl
+*.blg
+*.dvi
+*.synctex.gz
