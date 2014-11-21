@@ -4,7 +4,7 @@
 % SIG-ALTERNATE.CLS - VERSION 1.8
 % "COMPATIBLE" WITH THE "ACM_PROC_ARTICLE-SP.CLS" V2.7SP
 % Gerald Murray July 26th. 2005
-% 
+%
 % ---- Start of 'updates'  ----
 %
 % Allowance made to switch default fonts between those systems using
@@ -334,7 +334,7 @@
 
 \def\email#1{{{\eaddfnt{\vskip 4pt#1}}}}
 
-\def\addauthorsection{\ifnum\originalaucount>3
+\def\addauthorsection{\ifnum\originalaucount>4
     \section{Additional Authors}\the\addauthors
   \fi}
 
@@ -501,7 +501,7 @@
   \hrule width .4\columnwidth
   \kern 2.6\p@}                 % The \hrule has default height of .4pt .
 % ------
-\long\def\@makefntext#1{\noindent 
+\long\def\@makefntext#1{\noindent
 %\hbox to .5em{\hss$^{\@thefnmark}$}#1}   % original
 \hbox to .5em{\hss\textsuperscript{\@thefnmark}}#1}  % C. Clifton / GM Oct. 2nd. 2002
 % -------
@@ -1252,7 +1252,7 @@
 \newdimen\bibindent
 \setcounter{enumi}{1}
 \bibindent=0em
-\def\thebibliography#1{% 
+\def\thebibliography#1{%
 \ifnum\addauflag=0\addauthorsection\global\addauflag=1\fi
      \section[References]{%    <=== OPTIONAL ARGUMENT ADDED HERE
         {References} % was uppercased but this affects pdf bookmarks (SP/GM October 2004)

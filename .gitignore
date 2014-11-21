@@ -9,3 +9,12 @@
 ######################
 *~
 *#*
+
+# LATEX intermediate files #
+############################
+*.aux
+*.log
+*.bbl
+*.blg
+*.dvi
+*.synctex.gz
