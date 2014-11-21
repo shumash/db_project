@@ -1,18 +1,18 @@
 package db_proj;
 
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.Dimension;
+import java.awt.Image;
+import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.Vector;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.Timer;
 
 /**
  * Encapsulates low-level image utilities, mostly as static methods.
@@ -79,5 +79,15 @@ public class ImageUtils {
         //});
         //t.setRepeats(false);
         //t.start();
+	}
+	
+	
+	public Vector ComputeSimilarity(Image imageA, Image imageB, Constants.SimilarityType simType){
+		//TODO: IMPLEMENT ME
+		Vector retVector = new Vector();
+		retVector.add(new Double(0.0));
+		retVector.add(new Double(0.0));
+		retVector.add(new Double(0.0));
+		return retVector;
 	}
 }

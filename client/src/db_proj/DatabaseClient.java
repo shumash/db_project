@@ -175,6 +175,21 @@ public class DatabaseClient {
 		return size;
 	}
 
+	public int maybeStorePatch(BufferedImage imge){
+		//return patch or create a new patch and return it
+		
+		//for now, just split it every time.
+		
+		return 0;
+	}
+	
+	public Vector splitIntoPatches(BufferedImage image){
+	
+		return null;
+		
+	}
+	
+	//TODO: Vector<BufferedImage>
 	public Vector patchify(BufferedImage image, String patchSize) throws SQLException, IOException {
 		int pSize = 0;
 		Vector retVec = new Vector();
