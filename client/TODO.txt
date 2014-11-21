@@ -1,0 +1,52 @@
+
+//
+
+Inserting image:
+Given new image
+DONE --> A. split it
+TODO(shumash) --> B. for each patch - find likely similar patches
+TODO(shumash) -->C. find the most similar patch
+TODO --> D. get similarity
+TODO(Andy) F. insert patch if over a given threshold
+
+TODO(Andy)
+Reconstruct image:
+Given image_id:
+Get all the patch_pointers.
+Get all the patches.
+Put all the patches in image.
+
+LATER
+Evaluate images:
+Get reconstructed, get original, get similarity.
+
+
+
+
+// Notes -------------------------------------------------------
+ComputeSimilarity(Image a, Image b)
+
+
+Thresholds
+
+ArrayList<BufferedImage> splitIntoPatches(BufferedImage image) {
+
+//
+
+}
+
+Int maybeStorePatch(BufferedImage img) {
+    // Stores in DB or returns most similar patch
+BufferedImage sim = PatchSearch.findMostSimilarPatch(dbc, img);
+if (sim) {
+Vector similarity = ImageUtil.computeSimilarity(img, sim);
+if ( aboveThreshold(similarity, Constants.minSimilarity
+...
+
+}
+
+
+public PatchSearch {
+       public BufferedImage findMostSimilarPatch(DatabaseClient dClient,
+BufferedImage patch);
+};
