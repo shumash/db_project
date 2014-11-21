@@ -1,0 +1,36 @@
+\section{Introduction}
+
+Large collections of images are ubiquitous in the modern digital world.
+According to one 2014 Internet Trends report,
+more than 1.8 billion images are uploaded to the internet every day~\cite{meeker2014internet}.
+Our work is inspired by the intuition that there must be a lot of redundancy
+in large image collections, and that this redundancy could
+be exploited for more efficient storage and for applications such as duplicate detection.
+
+We focus on image redundancy on the patch level, assuming that large collections
+of images must have many patches which are nearly the same.
+Our goal is to store a set of images as a database of
+similar patches, where similar patches may be shared between images,
+ such that we minimize the storage space while maintaining certain \emph{quality}
+of reconstructed images. In effect, this results in lossy compression. More concretely,
+we aim to choose patch similarity criterion, and search and reconstruction algorithms such
+that:
+\begin{itemize}
+\item the database size is smaller than if full images were stored
+\item the images can be reconstructed from the database in real time
+\item the reconstructed images fulfill certain quality requirements (See Sec.~\ref{ssec:qual-met})
+\end{itemize}
+These conflicting introduce a number of tradeoffs, such as size of
+the database versus image quality.
+The goal of this paper is as much to produce a working system as to
+build up the analytical foundations that allow making these tradeoffs.
+
+In Section~\ref{sec:method}, we explain our method of ``patchifying'' images,
+storing them in a database, and reconstructing stored images. We also
+discuss image similarity, hashing schemes and indices in this core section.
+In Section~\ref{sec:analysis}, we provide analytical groundwork for
+selecting optimal image patch sizes, similarity threshold, and the quality metrics
+appropriate for evaluation. Finally, in Section~\ref{sec:performance}
+we evaluate our system on real data, using analytical tools from the previous section.
+In addition, in Section~\ref{sec:apps}, we briefly touch on applications that come naturally
+from a patch database, including similar image retrieval and duplicate detection.

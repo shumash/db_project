@@ -1,0 +1,21 @@
+\section{Method}\label{sec:method}
+
+To limit the complexity, we assume
+each image to be a square of $m^2$ pixels, and for all patches to
+be squares of the same size.
+We formally describe our method in Sec.~\ref{ssec:overview}. To summarize,
+we first segment each image into patches and store them in the \texttt{patches} database.
+Only patches sufficiently different
+from all the patches in \texttt{patches} are stored (See Sec.~\ref{ssec:sim}).
+Instead of storing each image explicitly, we approximate it by storing pointers to the patches
+approximating its original patches. In Section~\ref{ssec:lsh}, we describe the
+search algorithm used to quickly retrieve similar patches, and in Section~\ref{ssec:reconst}
+we detail the indices that make image reconstruction faster.
+
+\subsection{Overview}\label{ssec:overview}
+
+\subsection{Patch Similarity}\label{ssec:sim}
+
+\subsection{LSH for Patches}\label{ssec:lsh}
+
+\subsection{Image Reconstruction}\label{ssec:reconst}
