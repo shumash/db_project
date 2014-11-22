@@ -224,8 +224,12 @@ public class DatabaseClient {
 				ImageIO.write(patch,"png", os); 
 				InputStream fis = new ByteArrayInputStream(os.toByteArray());
 				PreparedStatement ps = conn.prepareStatement("INSERT INTO patches VALUES (?, ?)");
-				numPatches++;
-				retVec.add(new PointerData(numPatches, i, j));
+				Integer pointerNum = maybeStorePatch(patch);
+				if (pointerNum == null){
+					numPatches++;
+					pointerNum = numPatches;
+				}
+				retVec.add(new PointerData(pointerNum, i, j));
 				ps.setInt(1, numPatches);
 				ps.setBinaryStream(2, fis, (int)os.toByteArray().length);
 				ps.executeUpdate();
