@@ -296,6 +296,17 @@ public class DatabaseClient {
 	public BufferedImage reconstructImage(Vector<PointerData> patches) {
 		//first get the images:
 		Vector<BufferedImage> images = new Vector<BufferedImage>();
+		
+		StringBuffer sb = new StringBuffer("SELECT patch FROM patches WHERE id in ");
+		for (PointerData patch : patches){
+			sb.append(patch.patchNum)
+			sb.append(" ");
+		}
+		PreparedStatement ps  = conn.prepareStatement(sb.toString());
+		ResultSet rs = ps.executeQuery();
+		
+		//TODO: loop over every image patch and stitch together
+		
 		return null;
 
 	}
