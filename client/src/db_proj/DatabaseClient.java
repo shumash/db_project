@@ -71,12 +71,12 @@ public class DatabaseClient {
 		}
 		return conn != null;
 	}
-	
-	
 
-	
-	
-	
+
+
+
+
+
 
 	/** 
 	 * SUPER SIMPLE DEBUG VERSION! 
@@ -164,11 +164,11 @@ public class DatabaseClient {
 	}
 
 	public Integer maybeStorePatch(BufferedImage image, Constants.SimilarityType type){
-		
+
 		BufferedImage sim = PatchSearch.findMostSimilarPatch(this, image);
 		Vector<Double> similarity = null;
-		
-		
+
+
 		if (sim != null){
 			similarity = ImageUtils.computeSimilarity(image, sim, type);
 		}else{
@@ -181,12 +181,12 @@ public class DatabaseClient {
 			//TODO(AESPIELB): Would need to have the pointer number here too and return it
 		}
 		//return patch or create a new patch and return it
-		
+
 		//for now, just split it every time.
-		
+
 		return null;
 	}
-	
+
 	//assumes both vectors are of the same length
 	private boolean aboveThreshold(Vector<Double> similarity,
 			Vector<Double> minSimilarity) {
@@ -198,11 +198,11 @@ public class DatabaseClient {
 	}
 
 	public Vector<BufferedImage> splitIntoPatches(BufferedImage image){
-	
+
 		return null;
-		
+
 	}
-	
+
 	//TODO: Vector<BufferedImage>
 	public Vector<PointerData> patchify(BufferedImage image, String patchSize) throws SQLException, IOException {
 		int pSize = 0;
@@ -275,18 +275,18 @@ public class DatabaseClient {
 		PreparedStatement ps = conn.prepareStatement("SELECT patch_id, x, y FROM patch_pointers WHERE from_image = ?");
 		ps.setString(1, imgName);
 		ResultSet rs = ps.executeQuery();
-		
+
 		Vector<PointerData> res = new Vector<PointerData>();
 		while (rs.next()) {              
-	        int patch_id = rs.getInt("patch_id");
-	        int x = rs.getInt("x");
-	        int y = rs.getInt("y");
-	        
-	        res.add(new PointerData(patch_id, x, y));
-	}
-		
-		
-		
+			int patch_id = rs.getInt("patch_id");
+			int x = rs.getInt("x");
+			int y = rs.getInt("y");
+
+			res.add(new PointerData(patch_id, x, y));
+		}
+
+
+
 
 		rs.close();
 		ps.close();
@@ -297,6 +297,38 @@ public class DatabaseClient {
 		//first get the images:
 		Vector<BufferedImage> images = new Vector<BufferedImage>();
 		return null;
-		
+
+	}
+
+	public void clean() throws SQLException, IOException {
+		PreparedStatement ps = null;
+		try{
+			ps = conn.prepareStatement("DROP TABLE patch_pointers");
+			ps.executeQuery();
+		}catch(SQLException e){
+
+		}
+
+		try{
+			ps = conn.prepareStatement("DROP TABLE images");
+			ps.executeQuery();
+		}catch(SQLException e){
+
+		}
+
+		try{
+			ps = conn.prepareStatement("DROP TABLE patches");
+			ps.executeQuery();
+		}catch(SQLException e){
+
+		}
+
+
+		Runtime.getRuntime().exec( "psql -d imgtest -f ../schemas/schema.sql" );
+
+
+		if (ps != null){
+			ps.close();
+		}
 	}
 }

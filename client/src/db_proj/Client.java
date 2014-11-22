@@ -241,6 +241,7 @@ public class Client {
 		display("patchify [patchsize] - store an image into a bunch of patches of patchsize x patchsize pixels");
 		display("patchify-wrapper {local|db|web} [filename; relative to current path] [name] [patchsize]" );
 		display("reconstruct [name]" );
+		display("clean");
 		display("-----------------");
 	}
 
@@ -295,6 +296,9 @@ public class Client {
 				initDbClient();
 				Vector<PointerData> patches = dbClient.getPatches(imgName);
 				img = dbClient.reconstructImage(patches);
+			}else if (in.command.equals("clean")){
+				initDbClient();
+				dbClient.clean();
 			}
 			else {
 				display("Error: unknown command");
