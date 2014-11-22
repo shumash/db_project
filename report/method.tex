@@ -67,23 +67,23 @@ procedure:
 There are many image similarity metrics that have been developed for
 images (See~\cite{yasmin2013use} for a good survey.), and
 our method is applicable to any metric that involves Euclidean
-distance over image features, its stacked RGB pixel values
-in the simplest case.
+distance over image features, its stacked color channel pixel values
+being the simplest case.
 
 For the purpose of this project, we choose to use squared Euclidean
-distance over (CIE)LUV color space, which is known to be more perceptually
-uniform than the standard RGB color space~\cite{kekre2012performance}.
-Given two $n \times n$ patches $P_1$ and $P_2$, we stack $3 \times n^2$ LUV pixel values
-into vectors $p_1$ and $p_2$, and evaluate similarity $S$ as follows:
+distance over (CIE)LUV color space.
+Given two $n \times n$ patches $P_1$ and $P_2$, we evaluate similarity $S$
+per color channel $i$ as follows:
+
 \begin{displaymath}
-S(P_1, P_2) = \frac{||p_1 - p_2||^2}{n^2}
+S(P_1, P_2, i) = \frac{||P_1(i) - P_2(i)||^2}{n^2}
 \end{displaymath}
 where $||\cdot||$ denotes standard Euclidean norm.
 We normalize by the dimensionality of the space to allow us to keep the
-similarity threshold $T$ independent of the patch size.
+similarity threshold independent of the patch size. See section \ref{sec:simthresh} for more details.
 
 The use of Euclidean distance for patch similarity
-allows us to use Locality Sensitive Hashing to retreive patches
+allows us to use Locality Sensitive Hashing to retrieve patches
 that are likely to be similar, as detailed in the
 next section.
 
