@@ -73,19 +73,7 @@ public class DatabaseClient {
 	}
 	
 	
-	private class PointerData{
-		
-		public Integer patchNum;
-		public Integer x;
-		public Integer y;
-		
-		public PointerData(Integer patchNum, Integer x, Integer y){
-			this.patchNum = patchNum;
-			this.x = x;
-			this.y = y;
-		}
-		
-	}
+
 	
 	
 	
@@ -175,14 +163,40 @@ public class DatabaseClient {
 		return size;
 	}
 
-	public int maybeStorePatch(BufferedImage imge){
+	public Integer maybeStorePatch(BufferedImage image, Constants.SimilarityType type){
+		
+		BufferedImage sim = PatchSearch.findMostSimilarPatch(this, image);
+		Vector<Double> similarity = null;
+		
+		
+		if (sim != null){
+			similarity = ImageUtils.computeSimilarity(image, sim, type);
+		}else{
+			similarity = new Vector<Double>(); //make it the  min so it's always below threshold
+			similarity.add(-Double.MAX_VALUE);
+			similarity.add(-Double.MAX_VALUE);
+			similarity.add(-Double.MAX_VALUE);
+		}
+		if ( aboveThreshold(similarity, Constants.getSingleton().getMinSimilarity())){ //TODO: this always returns false for now
+			//TODO(AESPIELB): Would need to have the pointer number here too and return it
+		}
 		//return patch or create a new patch and return it
 		
 		//for now, just split it every time.
 		
-		return 0;
+		return null;
 	}
 	
+	//assumes both vectors are of the same length
+	private boolean aboveThreshold(Vector<Double> similarity,
+			Vector<Double> minSimilarity) {
+		boolean retVal = true;
+		for (int i = 0; i < similarity.size(); i++){
+			retVal = retVal && similarity.get(i) >= minSimilarity.get(i);
+		}
+		return retVal;
+	}
+
 	public Vector<BufferedImage> splitIntoPatches(BufferedImage image){
 	
 		return null;
@@ -224,7 +238,7 @@ public class DatabaseClient {
 				ImageIO.write(patch,"png", os); 
 				InputStream fis = new ByteArrayInputStream(os.toByteArray());
 				PreparedStatement ps = conn.prepareStatement("INSERT INTO patches VALUES (?, ?)");
-				Integer pointerNum = maybeStorePatch(patch);
+				Integer pointerNum = maybeStorePatch(patch, Constants.SimilarityType.EUCLIDEAN); //TODO(AESPIELB): Refactor to take in type somewhere
 				if (pointerNum == null){
 					numPatches++;
 					pointerNum = numPatches;
@@ -255,5 +269,33 @@ public class DatabaseClient {
 			ps.close();
 		}
 
+	}
+
+	public Vector<PointerData> getPatches(String imgName) throws SQLException {
+		PreparedStatement ps = conn.prepareStatement("SELECT patch_id, x, y FROM patch_pointers WHERE from_image = ?");
+		ps.setString(1, imgName);
+		ResultSet rs = ps.executeQuery();
+		
+		Vector<PointerData> res = new Vector<PointerData>();
+		while (rs.next()) {              
+	        int patch_id = rs.getInt("patch_id");
+	        int x = rs.getInt("x");
+	        int y = rs.getInt("y");
+	        
+	        res.add(new PointerData(patch_id, x, y));
+	}
+		
+		
+		
+
+		rs.close();
+		ps.close();
+		return res;
+	}
+
+	public BufferedImage reconstructImage(Vector<PointerData> patches) {
+		//first get the images:
+		Vector<BufferedImage> images = new Vector<BufferedImage>();
+		
 	}
 }

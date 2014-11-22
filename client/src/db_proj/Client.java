@@ -240,6 +240,7 @@ public class Client {
 		display("patch-load [id] - load or reload an image patch into local image variable");
 		display("patchify [patchsize] - store an image into a bunch of patches of patchsize x patchsize pixels");
 		display("patchify-wrapper {local|db|web} [filename; relative to current path] [name] [patchsize]" );
+		display("reconstruct [name]" );
 		display("-----------------");
 	}
 
@@ -289,6 +290,11 @@ public class Client {
 				
 				dbClient.storePointers(patchNumbers, imgName);
 				
+			}else if (in.command.equals("reconstruct")){
+				String imgName = in.getArg(0);
+				initDbClient();
+				Vector<PointerData> patches = dbClient.getPatches(imgName);
+				img = dbClient.reconstructImage(patches);
 			}
 			else {
 				display("Error: unknown command");
