@@ -183,16 +183,16 @@ public class DatabaseClient {
 		return 0;
 	}
 	
-	public Vector splitIntoPatches(BufferedImage image){
+	public Vector<BufferedImage> splitIntoPatches(BufferedImage image){
 	
 		return null;
 		
 	}
 	
 	//TODO: Vector<BufferedImage>
-	public Vector patchify(BufferedImage image, String patchSize) throws SQLException, IOException {
+	public Vector<PointerData> patchify(BufferedImage image, String patchSize) throws SQLException, IOException {
 		int pSize = 0;
-		Vector retVec = new Vector();
+		Vector<PointerData> retVec = new Vector();
 		try { 
 			pSize = Integer.parseInt(patchSize); 
 		} catch(NumberFormatException e) { 
@@ -224,8 +224,12 @@ public class DatabaseClient {
 				ImageIO.write(patch,"png", os); 
 				InputStream fis = new ByteArrayInputStream(os.toByteArray());
 				PreparedStatement ps = conn.prepareStatement("INSERT INTO patches VALUES (?, ?)");
-				numPatches++;
-				retVec.add(new PointerData(new Integer(numPatches), new Integer(i), new Integer(j)));
+				Integer pointerNum = maybeStorePatch(patch);
+				if (pointerNum == null){
+					numPatches++;
+					pointerNum = numPatches;
+				}
+				retVec.add(new PointerData(pointerNum, i, j));
 				ps.setInt(1, numPatches);
 				ps.setBinaryStream(2, fis, (int)os.toByteArray().length);
 				ps.executeUpdate();
@@ -238,7 +242,7 @@ public class DatabaseClient {
 
 	}
 
-	public void storePointers(Vector patchNumbers, String imgName) throws SQLException {
+	public void storePointers(Vector<Integer> patchNumbers, String imgName) throws SQLException {
 		for (int i = 0; i < patchNumbers.size(); i++){
 			Object o = patchNumbers.get(i);
 			PointerData pd  = (PointerData)o;

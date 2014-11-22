@@ -82,12 +82,12 @@ public class ImageUtils {
 	}
 	
 	
-	public Vector ComputeSimilarity(Image imageA, Image imageB, Constants.SimilarityType simType){
+	public Vector<Double> ComputeSimilarity(Image imageA, Image imageB, Constants.SimilarityType simType){
 		//TODO: IMPLEMENT ME
-		Vector retVector = new Vector();
-		retVector.add(new Double(0.0));
-		retVector.add(new Double(0.0));
-		retVector.add(new Double(0.0));
+		Vector<Double> retVector = new Vector<Double>();
+		retVector.add(0.0);
+		retVector.add(0.0);
+		retVector.add(0.0);
 		return retVector;
 	}
 }
