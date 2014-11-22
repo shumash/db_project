@@ -296,6 +296,7 @@ public class DatabaseClient {
 	public BufferedImage reconstructImage(Vector<PointerData> patches) {
 		//first get the images:
 		Vector<BufferedImage> images = new Vector<BufferedImage>();
+		return null;
 		
 	}
 }
