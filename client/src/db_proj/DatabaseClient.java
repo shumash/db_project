@@ -306,7 +306,6 @@ public class DatabaseClient {
 		String str = sb.substring(0, sb.length() - 2);
 		sb = new StringBuffer(str);
 		sb.append(")");
-		System.out.println(sb);
 		PreparedStatement ps  = conn.prepareStatement(sb.toString());
 		ResultSet rs = ps.executeQuery();
 
@@ -356,13 +355,14 @@ public class DatabaseClient {
 					System.out.println(y);
 					System.out.println("Accessing x " + patch.x*width + x);
 					System.out.println("Accessing y " + patch.y*height + y);
-					*/
+					
 					try{
 						System.out.println(image.getRGB(x, y));
 					}
 					catch(Exception e){
 						System.out.println("Uh oh");
 					}
+					*/
 					stitchedImage.setRGB(patch.x*width + x, patch.y* height + y, image.getRGB(x, y));
 				}
 			}
