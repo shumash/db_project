@@ -293,22 +293,84 @@ public class DatabaseClient {
 		return res;
 	}
 
-	public BufferedImage reconstructImage(Vector<PointerData> patches) {
+	public BufferedImage reconstructImage(Vector<PointerData> patches) throws SQLException, IOException {
 		//first get the images:
+		System.out.println("reconstructImage!");
 		Vector<BufferedImage> images = new Vector<BufferedImage>();
-		
-		StringBuffer sb = new StringBuffer("SELECT patch FROM patches WHERE id in ");
+
+		StringBuffer sb = new StringBuffer("SELECT patch FROM patches WHERE id in (");
 		for (PointerData patch : patches){
-			sb.append(patch.patchNum)
-			sb.append(" ");
+			sb.append(patch.patchNum);
+			sb.append(", ");
 		}
+		String str = sb.substring(0, sb.length() - 2);
+		sb = new StringBuffer(str);
+		sb.append(")");
+		System.out.println(sb);
 		PreparedStatement ps  = conn.prepareStatement(sb.toString());
 		ResultSet rs = ps.executeQuery();
-		
-		//TODO: loop over every image patch and stitch together
-		
-		return null;
 
+
+		while (rs.next()) {   
+			byte[] imgBytes = rs.getBytes(1);
+			InputStream in = new ByteArrayInputStream(imgBytes);
+			BufferedImage res = ImageIO.read(in);
+			images.add(res);
+
+		}
+
+		int maxX = -1;
+		int maxY = -1;
+		int width = images.get(0).getWidth();
+		int height = images.get(0).getHeight();
+		int type = images.get(0).getType();
+
+		for (PointerData patch : patches){
+			if (patch.x > maxX){
+				maxX = patch.x;
+			}
+			if (patch.y > maxY){
+				maxY = patch.y;
+			}
+		}
+
+		//create empty image of size width*x + height*y
+		BufferedImage stitchedImage = new BufferedImage((maxX + 1) * width, (maxY + 1) * height, type);
+
+		//now let' stitch them together
+		for (int i = 0; i < patches.size(); i++){
+			PointerData patch = patches.get(i);
+			BufferedImage image = images.get(i);
+
+			//set rgb values:
+			for (int x = 0; x < width; x++ ){
+				for (int y = 0; y < height; y++ ){
+					/*
+					System.out.println("Height is " + stitchedImage.getHeight());
+					System.out.println("Width is " + stitchedImage.getHeight());
+					System.out.println(patch.x);
+					System.out.println(width);
+					System.out.println(x);
+					System.out.println(patch.y);
+					System.out.println(height);
+					System.out.println(y);
+					System.out.println("Accessing x " + patch.x*width + x);
+					System.out.println("Accessing y " + patch.y*height + y);
+					*/
+					try{
+						System.out.println(image.getRGB(x, y));
+					}
+					catch(Exception e){
+						System.out.println("Uh oh");
+					}
+					stitchedImage.setRGB(patch.x*width + x, patch.y* height + y, image.getRGB(x, y));
+				}
+			}
+
+
+		}
+
+		return stitchedImage;
 	}
 
 	public void clean() throws SQLException, IOException {
