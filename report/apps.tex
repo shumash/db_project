@@ -3,13 +3,24 @@
 One of the appeals of this approximate patch-based approach
 is that it naturally lends itself to applications. In this
 section we describe methods to use our database for
-two applications - duplicate detection (Sec.~\ref{ssec:dups})
-and similar image retrieval (Sec.~\ref{ssec:retr}).
+two applications - duplicate detection and similar image retrieval.
 
-\subsection{Duplicate Detection}\label{ssec:dups}
+%\subsection{Duplicate Detection}\label{ssec:dups}
 
-Encoding images as pointers to a collection of patches provides the ability to quickly spot images that contain large overlapping regions (composed of the same patches). In the extreme case, if multiple images point to the same set of patches, then we know these images are duplicates. Duplicates are a big problem in big computer vision datasets because the occur frequently and are hard to manually remove. They occur frequently because these datasets are automatically scraped from the internet, where the same image can occur under separate identifiers (on different websites, copied and uploaded by different users, etc.). This is also the case with the SUN database \cite{SUN} used in this paper.
+Encoding images as pointers to a collection of patches provides the ability to quickly spot images that contain large overlapping regions (composed of the same patches). In the extreme case, if multiple images point to the same set of patches, then we know these images are duplicates. Duplicates are a big problem in big computer vision datasets because they occur frequently and are hard to manually remove. They occur frequently (sometimes up to $10\%$ of the time) because these datasets are automatically scraped from the internet, where the same image can occur under separate identifiers (on different websites, copied and uploaded by different users, etc.). The SUN database \cite{SUN} used in this paper is no exception.
 
-Not all duplicates are pixel-wise identical: the same image encoded using different standards or sized to different dimensions (even when resized to the same dimension later) will look almost identical to the human eye, but will contain different pixel values. Our patch similarity metric is forgiving to perturbation at the pixel-level as long as the patch is overall similar to another patch (see sec.\ref{sec:simthresh}).
+Duplicates are difficult to detect because not all duplicates are pixel-wise identical: the same image encoded using different standards or sized to different dimensions (even when resized to the same dimension later) will look almost identical to the human eye, but will contain different pixel values. Our patch similarity metric is forgiving to perturbation at the pixel-level as long as the patch is overall similar to another patch (see sec.\ref{sec:simthresh}). If multiple images map to the same set of patches that means that the corresponding patches in those images are within a similarity threshold of each other (upper-bounded by $2T$). If multiple images map to all of the same patches, then we have good guarantees that the images are near-duplicates. Otherwise, the probability that every single patch matched would be low (i.e. the images are similar locally, for multiple local locations - as many locations as patches). 
 
-\subsection{Similar Image Retrieval}\label{ssec:retr}
+We can use these properties to spot duplicates in our dataset on the fly. For instance, when an image is added to the database, we can measure how many new patches the image contributed to the patch dictionary (because similar-enough patches could not be found), and how much of the image was mapped to pre-existing dictionary patches. When an image is reconstructed fully from the dictionary patches, and the patches it is reconstructed from all come from a single other image in the database, we know that the newly-added image is a duplicate. This is depicted in fig. \ref{fig:dups}. 
+
+By the same logic, similar images are those that overlap in terms of the patches they share in common. We can easily check if the patches that match are found consecutively in the images (for instance, when only some local region of the images matches, like when they share an object) or are generally spread throughout (have a similar Gist). We can thus discover images that have different degrees of overlap with other images.
+
+ \begin{figure}
+\hspace{-8mm}
+%\centering
+\includegraphics[width=1.2\linewidth]{Figures/dupDetection.pdf}
+\caption{This is an example of the first 200 consecutive insertion queries to an empty database: for each image inserted, we can measure how many new patches were added to the patch dictionary (out of 400 patches in the image). When we see that this number spikes down to 0 we know that the image has been fully reconstructed from patches from other images. We can check if all those patches came from a single other image. If that is the case, we know we have duplicate or near-duplicate image. }
+\label{fig:dups}
+\end{figure}
+
+%\subsection{Similar Image Retrieval}\label{ssec:retr}
