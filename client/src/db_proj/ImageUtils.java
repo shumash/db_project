@@ -82,7 +82,7 @@ public class ImageUtils {
 	}
 	
 	
-	public Vector<Double> ComputeSimilarity(Image imageA, Image imageB, Constants.SimilarityType simType){
+	public static Vector<Double> computeSimilarity(Image imageA, Image imageB, Constants.SimilarityType simType){
 		//TODO: IMPLEMENT ME
 		Vector<Double> retVector = new Vector<Double>();
 		retVector.add(0.0);

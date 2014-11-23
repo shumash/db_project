@@ -71,24 +71,12 @@ public class DatabaseClient {
 		}
 		return conn != null;
 	}
-	
-	
-	private class PointerData{
-		
-		public Integer patchNum;
-		public Integer x;
-		public Integer y;
-		
-		public PointerData(Integer patchNum, Integer x, Integer y){
-			this.patchNum = patchNum;
-			this.x = x;
-			this.y = y;
-		}
-		
-	}
-	
-	
-	
+
+
+
+
+
+
 
 	/** 
 	 * SUPER SIMPLE DEBUG VERSION! 
@@ -175,20 +163,46 @@ public class DatabaseClient {
 		return size;
 	}
 
-	public int maybeStorePatch(BufferedImage imge){
+	public Integer maybeStorePatch(BufferedImage image, Constants.SimilarityType type){
+
+		BufferedImage sim = PatchSearch.findMostSimilarPatch(this, image);
+		Vector<Double> similarity = null;
+
+
+		if (sim != null){
+			similarity = ImageUtils.computeSimilarity(image, sim, type);
+		}else{
+			similarity = new Vector<Double>(); //make it the  min so it's always below threshold
+			similarity.add(-Double.MAX_VALUE);
+			similarity.add(-Double.MAX_VALUE);
+			similarity.add(-Double.MAX_VALUE);
+		}
+		if ( aboveThreshold(similarity, Constants.getSingleton().getMinSimilarity())){ //TODO: this always returns false for now
+			//TODO(AESPIELB): Would need to have the pointer number here too and return it
+		}
 		//return patch or create a new patch and return it
-		
+
 		//for now, just split it every time.
-		
-		return 0;
-	}
-	
-	public Vector<BufferedImage> splitIntoPatches(BufferedImage image){
-	
+
 		return null;
-		
 	}
-	
+
+	//assumes both vectors are of the same length
+	private boolean aboveThreshold(Vector<Double> similarity,
+			Vector<Double> minSimilarity) {
+		boolean retVal = true;
+		for (int i = 0; i < similarity.size(); i++){
+			retVal = retVal && similarity.get(i) >= minSimilarity.get(i);
+		}
+		return retVal;
+	}
+
+	public Vector<BufferedImage> splitIntoPatches(BufferedImage image){
+
+		return null;
+
+	}
+
 	//TODO: Vector<BufferedImage>
 	public Vector<PointerData> patchify(BufferedImage image, String patchSize) throws SQLException, IOException {
 		int pSize = 0;
@@ -224,7 +238,7 @@ public class DatabaseClient {
 				ImageIO.write(patch,"png", os); 
 				InputStream fis = new ByteArrayInputStream(os.toByteArray());
 				PreparedStatement ps = conn.prepareStatement("INSERT INTO patches VALUES (?, ?)");
-				Integer pointerNum = maybeStorePatch(patch);
+				Integer pointerNum = maybeStorePatch(patch, Constants.SimilarityType.EUCLIDEAN); //TODO(AESPIELB): Refactor to take in type somewhere
 				if (pointerNum == null){
 					numPatches++;
 					pointerNum = numPatches;
@@ -255,5 +269,149 @@ public class DatabaseClient {
 			ps.close();
 		}
 
+	}
+
+	public Vector<PointerData> getPatches(String imgName) throws SQLException {
+		PreparedStatement ps = conn.prepareStatement("SELECT patch_id, x, y FROM patch_pointers WHERE from_image = ?");
+		ps.setString(1, imgName);
+		ResultSet rs = ps.executeQuery();
+
+		Vector<PointerData> res = new Vector<PointerData>();
+		while (rs.next()) {              
+			int patch_id = rs.getInt("patch_id");
+			int x = rs.getInt("x");
+			int y = rs.getInt("y");
+
+			res.add(new PointerData(patch_id, x, y));
+		}
+
+
+
+
+		rs.close();
+		ps.close();
+		return res;
+	}
+
+	public BufferedImage reconstructImage(Vector<PointerData> patches) throws SQLException, IOException {
+		//first get the images:
+		System.out.println("reconstructImage!");
+		Vector<BufferedImage> images = new Vector<BufferedImage>();
+
+		StringBuffer sb = new StringBuffer("SELECT patch FROM patches WHERE id in (");
+		for (PointerData patch : patches){
+			sb.append(patch.patchNum);
+			sb.append(", ");
+		}
+		String str = sb.substring(0, sb.length() - 2);
+		sb = new StringBuffer(str);
+		sb.append(")");
+		PreparedStatement ps  = conn.prepareStatement(sb.toString());
+		ResultSet rs = ps.executeQuery();
+
+
+		while (rs.next()) {   
+			byte[] imgBytes = rs.getBytes(1);
+			InputStream in = new ByteArrayInputStream(imgBytes);
+			BufferedImage res = ImageIO.read(in);
+			images.add(res);
+
+		}
+
+		int maxX = -1;
+		int maxY = -1;
+		int width = images.get(0).getWidth();
+		int height = images.get(0).getHeight();
+		int type = images.get(0).getType();
+
+		for (PointerData patch : patches){
+			if (patch.x > maxX){
+				maxX = patch.x;
+			}
+			if (patch.y > maxY){
+				maxY = patch.y;
+			}
+		}
+
+		//create empty image of size width*x + height*y
+		BufferedImage stitchedImage = new BufferedImage((maxX + 1) * width, (maxY + 1) * height, type);
+
+		//now let' stitch them together
+		for (int i = 0; i < patches.size(); i++){
+			PointerData patch = patches.get(i);
+			BufferedImage image = images.get(i);
+
+			//set rgb values:
+			for (int x = 0; x < width; x++ ){
+				for (int y = 0; y < height; y++ ){
+					/*
+					System.out.println("Height is " + stitchedImage.getHeight());
+					System.out.println("Width is " + stitchedImage.getHeight());
+					System.out.println(patch.x);
+					System.out.println(width);
+					System.out.println(x);
+					System.out.println(patch.y);
+					System.out.println(height);
+					System.out.println(y);
+					System.out.println("Accessing x " + patch.x*width + x);
+					System.out.println("Accessing y " + patch.y*height + y);
+					
+					try{
+						System.out.println(image.getRGB(x, y));
+					}
+					catch(Exception e){
+						System.out.println("Uh oh");
+					}
+					*/
+					stitchedImage.setRGB(patch.x*width + x, patch.y* height + y, image.getRGB(x, y));
+				}
+			}
+
+
+		}
+
+		return stitchedImage;
+	}
+
+	public void clean() throws SQLException, IOException {
+		PreparedStatement ps = null;
+		try{
+			ps = conn.prepareStatement("DROP TABLE patch_pointers");
+			ps.executeQuery();
+		}catch(SQLException e){
+
+		}
+
+		try{
+			ps = conn.prepareStatement("DROP TABLE images");
+			ps.executeQuery();
+		}catch(SQLException e){
+
+		}
+
+		try{
+			ps = conn.prepareStatement("DROP TABLE patches");
+			ps.executeQuery();
+		}catch(SQLException e){
+
+		}
+
+
+		Runtime.getRuntime().exec( "psql -d imgtest -f ../schemas/schema.sql" );
+
+
+		if (ps != null){
+			ps.close();
+		}
+	}
+
+	public void randomSample(double percentage) throws SQLException {
+		PreparedStatement ps = conn.prepareStatement("select * from images where random() < ?");
+		ps.setDouble(1, percentage);
+		ResultSet rs = ps.executeQuery();
+		while (rs.next()){
+			System.out.println(rs.getString("imgname"));
+		}
+		
 	}
 }
