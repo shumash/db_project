@@ -15,6 +15,14 @@ There will always be a trade-off between compression benefits (storage - patch d
 \label{fig:badrecon}
 \end{figure}
 
+ \begin{figure}
+%\hspace{-25mm}
+\centering
+\includegraphics[width=1\linewidth]{Figures/184_25.png}
+\caption{Compare this image reconstruction, computed with a dictionary of $25\times 25$ pixel patches with the reconstruction in fig.\ref{fig:badrecon}, computed with $50\times 50$ patches. In both cases, a similar threshold is used (scaled to the patch size, as discussed in sec. \label{sec:simthresh}) but the visual artifacts are less noticeable because smaller patches have less contained structure, and are more likely to be homogenous in appearance.}
+\label{fig:patchsize}
+\end{figure}
+
 
 %\subsection{Quality Metrics}\label{ssec:qual-met}
 %There are many possible formulations of these quality constraints; we detail those that we considered for this paper in section TODO.  Beyond mathematical metrics, subjective methods are also interesting to consider for formulating the quality constraints; one could imagine a scenario in which image quality is assessed by humans through a crowdsourced system, perhaps using an engine such as Amazon's Mechanical Turk TODO: cite.  We consider such subjective similarity metrics outside the scope of this paper and focus on the mathematical metrics for now.
@@ -24,6 +32,12 @@ There will always be a trade-off between compression benefits (storage - patch d
 \subsection{Patch Size}
 
 TODO(Zoya,Andrew): tradeoffs for patch size
+
+At larger patch granularities, each patch contains more image structure, and thus the probability that another patch contains the same or similar image content decreases with the number of pixels in a patch. At larger patch granularities it becomes increasingly harder to find matching patches in the patch dictionary, and the closest matching patches for textured regions might introduce artifacts (see fig.\ref{fig:patch size}). At the same time, patches that are too small do not offer as efficient a compression strategy. We must balance the costs of storing pointers to patches for each image in our database, as well as all the patches themselves, against the costs of storing the images in their original form. This calculation is investigated further below. 
+
+%In the extreme case, a patch is equal to one pixel, so the probability of an identical color patch is $\frac{1}{255^3}$, assuming 3 color channels. This value is multiplied by itself as many times as there are pixels in a patch to find an identical patch. For our application, we are interested in similar patches, rather than identical ones (see sec.\ref{sec:simthresh}), and so this probability is higher but bounded by this value, and similarly scales with patch size. 
+
+\subsubsection{Cost Evaluation}
 
 Assume for now that we choose to store $p$ patches in our auxiliary table.  In practice, we choose $p$ to be a function $p \colon Function \to \mathds{N}$ which maps from our similarity metric to a number of patches to store.  Assume also that each patch is square and composed of $n^2$ pixels, where $n$ is a user defined parameter.  We further assume that each pixel requires 8 bytes to store  and that each pointer is 8 bytes (a standard integer for a 64-bit system).  Under this "image only" scheme, in the case where we have $i$ images, the cost $c_i$ to store all the images in our database is:
 
@@ -38,7 +52,6 @@ In the case where we store pointers to patches, we have two tables: one table to
 \end{equation}.
 
 The first term is the cost of storing the pointer data, while the second term is the cost of storing the patch exemplars themselves.
-
 
 \subsection{Sampling strategies}
 
@@ -88,3 +101,8 @@ Multiple color channels $P_i(1), P_i(2), P_i(3)$ are possible, but we choose to 
 \label{fig:colProblem}
 \end{figure}
 
+\subsection{Image Type}
+
+TODO: Zoya will add experiments on different scene types
+
+Not all image content is amenable to the same type of compression. For some types of images, particularly where there is a lot of spatial structure (e.g. indoors scenes with objects and parts), compression artifacts are much more noticeable and thus similarity thresholds should be more stringent. An interesting extension that is beyond the score of this paper would be to have a content-aware similarity threshold (self-adjusting to content type such as indoor vs outdoor/natural).

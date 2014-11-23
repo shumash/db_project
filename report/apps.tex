@@ -8,4 +8,8 @@ and similar image retrieval (Sec.~\ref{ssec:retr}).
 
 \subsection{Duplicate Detection}\label{ssec:dups}
 
+Encoding images as pointers to a collection of patches provides the ability to quickly spot images that contain large overlapping regions (composed of the same patches). In the extreme case, if multiple images point to the same set of patches, then we know these images are duplicates. Duplicates are a big problem in big computer vision datasets because the occur frequently and are hard to manually remove. They occur frequently because these datasets are automatically scraped from the internet, where the same image can occur under separate identifiers (on different websites, copied and uploaded by different users, etc.). This is also the case with the SUN database \cite{SUN} used in this paper.
+
+Not all duplicates are pixel-wise identical: the same image encoded using different standards or sized to different dimensions (even when resized to the same dimension later) will look almost identical to the human eye, but will contain different pixel values. Our patch similarity metric is forgiving to perturbation at the pixel-level as long as the patch is overall similar to another patch (see sec.\ref{sec:simthresh}).
+
 \subsection{Similar Image Retrieval}\label{ssec:retr}
