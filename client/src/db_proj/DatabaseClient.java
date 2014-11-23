@@ -404,4 +404,14 @@ public class DatabaseClient {
 			ps.close();
 		}
 	}
+
+	public void randomSample(double percentage) throws SQLException {
+		PreparedStatement ps = conn.prepareStatement("select * from images where random() < ?");
+		ps.setDouble(1, percentage);
+		ResultSet rs = ps.executeQuery();
+		while (rs.next()){
+			System.out.println(rs.getString("imgname"));
+		}
+		
+	}
 }

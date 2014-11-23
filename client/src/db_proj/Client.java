@@ -242,6 +242,7 @@ public class Client {
 		display("patchify-wrapper {local|db|web} [filename; relative to current path] [name] [patchsize]" );
 		display("reconstruct [name]" );
 		display("clean");
+		display("random-sample [percentage]");
 		display("-----------------");
 	}
 
@@ -299,6 +300,11 @@ public class Client {
 			}else if (in.command.equals("clean")){
 				initDbClient();
 				dbClient.clean();
+			}else if (in.command.equals("random-sample")){
+				//TODO: This doesn't really do anything right now.
+				initDbClient();
+				//TODO: add try/catch?
+				dbClient.randomSample(Double.parseDouble(in.getArg(0)));
 			}
 			else {
 				display("Error: unknown command");
