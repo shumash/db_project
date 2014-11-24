@@ -54,6 +54,14 @@ In the case where we store pointers to patches, we have two tables: one table to
 
 The first term is the cost of storing the pointer data, while the second term is the cost of storing the patch exemplars themselves.
 
+Given these two equations, for a fixed $m$ and $n$, we can easily see that our compressive scheme becomes more space-efficient when:
+
+\begin{equation}
+	p < \frac{m^2 * (3*n^2 - 8) * i}{3*n^4}
+\end{equation}
+
+As long as we choose a similarity threshold such that new image patches get added at a rate that guarantees this inequality is satisfied, our compressive method of image storage will save space.
+
 \subsection{Sampling strategies}
 
 A patch dictionary can be built up incrementally, adding new patches as new images are added to the database. A potential problem with this approach is that image reconstruction quality will tend to decrease with the order in which images are added, such that images added to the database earlier will tend to have more patches that correspond to them (see Fig.\ref{fig:sampStrategy} for an example). A strategy with a more even distribution of reconstruction quality over images involves starting with a batch of images, and seeding the dictionary by randomly sampling patches from a set of images from the batch. This is the strategy we employ. 
