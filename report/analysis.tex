@@ -40,16 +40,16 @@ At larger patch granularities, each patch contains more image structure, and thu
 
 \subsubsection{Cost Evaluation}
 
-Assume for now that we choose to store $p$ patches in our auxiliary table.  In practice, we choose $p$ to be a function $p \colon Function \to \mathds{N}$ which maps from our similarity metric to a number of patches to store.  Assume also that each patch is square and composed of $n^2$ pixels, where $n$ is a user defined parameter.  We further assume that each pixel requires 8 bytes to store  and that each pointer is 8 bytes (a standard integer for a 64-bit system).  Under this "image only" scheme, in the case where we have $i$ images, the cost $c_i$ to store all the images in our database is:
+Assume for now that we choose to store $p$ patches in our auxiliary table.  In practice, we choose $p$ to be a function $p \colon Function \to \mathds{N}$ which maps from our similarity metric to a number of patches to store.  Assume also that each patch is square and composed of $n^2$ pixels, where $n$ is a user defined parameter.  We further assume that each pixel requires 3 bytes to store  and that each pointer is 8 bytes (a standard integer for a 64-bit system).  Under this "image only" scheme, in the case where we have $i$ images, the cost $c_i$ to store all the images in our database is:
 
 \begin{equation}
-	c_i(i, m) = 8  i  m^2
+	c_i(i, m) = 3  i  m^2
 \end{equation}
 
 In the case where we store pointers to patches, we have two tables: one table to store pointers to image patch exemplars, and a second table to store the exemplar data themselves.  Under this "patch pointer"scheme, in the case where we have $i$ images and $p$ patches, the cost $c_p$ to store all the images in our database is:
 
 \begin{equation}
-	c_p(i, p, m, n) = 8 i (\frac{m}{n})^2 + 8  p  n^2
+	c_p(i, p, m, n) = 8 i (\frac{m}{n})^2 + 3  p  n^2
 \end{equation}.
 
 The first term is the cost of storing the pointer data, while the second term is the cost of storing the patch exemplars themselves.
