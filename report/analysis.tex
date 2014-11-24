@@ -30,6 +30,7 @@ There will always be a trade-off between compression benefits (storage - patch d
 %We wish to construct a database that trades off minimizing the amount of required space with maximizing read and write speeds of the data.
 
 \subsection{Patch Size}
+\label{sec:patchsize}
 
 TODO(Zoya,Andrew): tradeoffs for patch size
 
@@ -67,7 +68,7 @@ A patch dictionary can be built up incrementally, adding new patches as new imag
 \end{figure}
 
 
-\subsection{Similarity Threshold}
+\subsection{Similarity Function}
 \label{sec:simthresh}
 
 Many image (more specifically, patch) similarity functions are possible, each with its own distinct set of parameters that can be tweaked for the required application. Because we are dealing with patches of a size specifically chosen to increase within-patch homogeneity, we do not consider cases of patches containing objects (the most we expect is an object boundary or simple texture), and thus do not need to consider complex image similarity functions (like SIFT matching, spatial relationship-preserving functions, etc.). We can constrain ourselves to color similarity, and split a patch $P_i$ into 3 color channels: $P_i(1), P_i(2), P_i(3)$. 
@@ -89,9 +90,17 @@ then the similarity in one color channel may compensate for the difference in an
 
 Multiple color channels $P_i(1), P_i(2), P_i(3)$ are possible, but we choose to work in the (CIE)LUV color space, which is known to be more perceptually uniform than the standard RGB color space~\cite{kekre2012performance}. Additionally, our formulation makes it possible to impose separate similarity thresholds on each of the color channels ($T_1,T_2,T_3$). However, for simplicity, we set $T_1=T_2=T_3=T$.
 
-Choosing a threshold $T$ requires weighing the quantitative benefits of compression with the qualitatively poorer image reconstructions. We ran a number of experiments, varying the threshold, and quantitative and qualitatively examining the results. In fig. \ref{fig:perfGraphs} we plot a few small experiments (with 200 images) for demonstrative purposes. 
-TODO: Zoya will finish this section
+\subsection{Similarity Threshold}
 
+Choosing a threshold $T$ requires weighing the quantitative benefits of compression with the qualitatively poorer image reconstructions. We ran a number of experiments, varying the threshold, and quantitatively and qualitatively examining the results. In fig. \ref{fig:perfGraphs} we plot a few small experiments (with 200 images) for demonstrative purposes. The images were $500\times 500$ pixels, and the patch size was $25\times 25$. We chose this patch size due to the discussion in \ref{sec:patchsize}. Below we consider a number of quantitative indicators for patch compression. 
+
+In the set of graphs in the first column of fig. \ref{fig:perfGraphs}, we plot in blue the dictionary size against the number of images added to the database. We compare this to the total number of patches that would have been stored if no compression scheme was utilized (red dotted line). We can see that for all choices of threshold, the size of the patch dictionary grows slower than the total number of patches that would need to be added if all images were stored along with their original patches. The gap between the blue and red dotted lines is a measure of the storage savings. As the threshold becomes more stringent, the blue line approaches the red dotted line. Note additionally that as the threshold becomes smaller, patches are more likely to be reused from the same image than from other images when compressing an image, because only patches from the same image will be similar enough from other patches from this image.
+
+The second column of fig. \ref{fig:perfGraphs} contains histograms indicating how many images contributed different amounts of new patches to the patch dictionary. When the threshold is very small (as in the histogram in the last row) more of the images contribute most of their patches (380-400 new patches added to the patch dictionary per image). Note additionally that the small number of images that is contributing 0 new patches to the dictionary accounts for the $10\%$ duplicates that are present in the SUN database (more about this in sec. \ref{sec:apps}).
+
+The third column of fig. \ref{fig:perfGraphs} contains an insertion history: for each image inserted into the database, we track how many of its patches were added to the patch dictionary. We can see that as the patch similarity threshold decreases, most images contribute most of their pixels. This provides similar information to the histogram (which is merely the cumulative), but allows us to monitor any temporal changes. The spikes to 0 in this graph are indicative of duplicate images, and are discussed in sec. \ref{sec:apps}.
+
+In the final column of fig. \ref{fig:perfGraphs}, we see a sample image reconstruction. We can see that the reconstruction quality increases, and visual artifacts decrease, as the similarity threshold decreases (becomes more stringent). At some point in the middle, the reconstruction is already indistinguishable from the original, but with significant database compression benefits. Thus, for further analysis we consider the threshold $T=8$ (recall that this is per color channel, and is independent of patch size).
 %Thus, given two patches $P_i$ and $P_j$, we can measure their similarity in a given color channel by taking the Euclidean distance of the color values across all the pixels. 
 
 %where a patch is a collection of pixels, each of which is defined to be a triplet of integer values, assuming a 3-D color space. For a patch $P_i$, let us define its 3 color channels to be: $P_i(1), P_i(2), P_i(3)$.
@@ -108,9 +117,23 @@ TODO: Zoya will finish this section
 %\hspace{-25mm}
 %\centering
 \includegraphics[width=1\linewidth]{Figures/perfGraphs_25.pdf}
-\caption{Quantitative and qualitative results obtained by varying the patch similarity threshold, $T$, while extracting $400$ patches from each image. In the first row, $T=250$, the dictionary size is 50,822 patches, and the average compression ratio per image is $36.73\%$. In the second row, $T=25$, the dictionary size is $65,794$ patches, and the average compression ratio per image is $18.09\%$. In the third row, $T=2.5$, the dictionary size is $72,445$ patches, and the average compression ratio per image is $9.80\%$.}
+\caption{Quantitative and qualitative results obtained by varying the patch similarity threshold, $T$, while extracting $400$ patches from each image. In the first row, $T=80$, the dictionary size is 50,822 patches, and the average compression per image is $36.73\%$. In the second row, $T=8$, the dictionary size is $65,794$ patches, and the average compression per image is $18.09\%$. In the third row, $T=0.8$, the dictionary size is $72,445$ patches, and the average compression per image is $9.80\%$.}
 \label{fig:perfGraphs}
 \end{figure*}
+
+\subsection{Growing the Database}
+
+In the preceding sections, we determined that for an image sized $500\times 500$, a $25\times 25$ patch size with a $T=0.8$ patch similarity threshold is appropriate since compression savings are properly balanced against artifacts introduced during image reconstruction. For further experiments, we scale down the image size to $100\times 100$ and the patch size to $5\times 5$, accordingly, maintaining the patch:image ratio. Note that the similarity threshold still applies as it is independent of patch size. The reduction in image size allows us to consider larger experiments on databases of image thumbnails. 
+
+In fig. \ref{fig:bigsize} we consider the growth of the patch dictionary as we add 2K images to our database. We add images from different categories, and observe a slight change in dictionary growth rate for every new category added.
+
+ \begin{figure}
+%\hspace{-25mm}
+%\centering
+\includegraphics[width=1\linewidth]{Figures/plot1.png}
+\caption{A patch dictionary constructed from $5\times 5$ patches from $100\times 100$ images, with a $T=0.8$ patch similarity threshold, obtains an average compression ratio of $18.95\%$ per image. The average number of new patches added per image is $330.70$ with a total dictionary size of $645,534$ patches representing 1952 images. The dotted lines mark the addition of new image categories, (left to right) mountain (with dictionary growth rate 312.96, equivalent to compression of $21.76\%$ per image), badlands (growth rate 330.50, compression $17.38\%$), canyon (growth rate: 360.61, compression $9.85\%$), and pasture (growth rate: 334.11, $16.47\%$).}
+\label{fig:bigsize}
+\end{figure}
 
 \subsection{Image Type}
 
