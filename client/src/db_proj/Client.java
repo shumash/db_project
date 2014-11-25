@@ -124,6 +124,17 @@ public class Client {
 			}
 			return args[i];
 		}
+		
+		/**
+		 * Same as get argument, but parses the output into an integer.
+		 * @param i
+		 * @return
+		 * @throws IllegalArgumentException
+		 */
+		int getArgInt(int i) throws IllegalArgumentException {
+			String num = getArg(i);
+			return Integer.parseInt(num);
+		}
 
 		int numArgs() {
 			return args.length;
@@ -199,28 +210,9 @@ public class Client {
 			res = ImageUtils.loadWebImage(arg);
 		} else if (type.equals("db")){
 			initDbClient();
-			res = dbClient.getImage(arg);
+			int imgId = dbClient.getImageId(arg);
+			res = dbClient.getImageOriginal(imgId);
 		}
-		if (res == null) {
-			throw new RuntimeException("Could not read img");
-		}
-		return res;
-	}
-
-	/**
-	 * Loads patches from various sources.
-	 * 
-	 * @param arg image id in database
-	 * @return loaded image
-	 * @throws IOException
-	 * @throws SQLException
-	 */
-	private BufferedImage loadPatch(String arg) throws IOException, SQLException {
-		BufferedImage res = null;
-
-		initDbClient();
-		res = dbClient.getPatch(arg);
-
 		if (res == null) {
 			throw new RuntimeException("Could not read img");
 		}
@@ -235,12 +227,9 @@ public class Client {
 		display("q - quit");
 		display("img-load {local|db|web} [filename; relative to current path] - load or reload an image into local image variable");
 		display("img-show - show loaded image");
-		display("img-store [name] - stores loaded image with name");
-		display("patch-store [number] - stores a loaded image as a patch with a number");
+		display("img-store [name] - stores loaded image with name, automatically patches everything");
 		display("patch-load [id] - load or reload an image patch into local image variable");
-		display("patchify [patchsize] - store an image into a bunch of patches of patchsize x patchsize pixels");
-		display("patchify-wrapper {local|db|web} [filename; relative to current path] [name] [patchsize]" );
-		display("reconstruct [name]" );
+		display("reconstruct [id] - reconstruct image from patches and load into local image variable" );
 		display("clean");
 		display("random-sample [percentage]");
 		display("-----------------");
@@ -254,59 +243,32 @@ public class Client {
 				img = loadImage(in.getArg(0), in.getArg(1));
 			} else if (in.command.equals("img-store")) {
 				initDbClient();
-				dbClient.storeImage(in.getArg(0), img);
+				dbClient.storeImage(img, in.getArg(0));
 			} else if (in.command.equals("img-show")) {
 				if (img != null) {
 					ImageUtils.showImage(img);
 				} else {
 					throw new RuntimeException("No image loaded; use img-load first");
 				}
-			} else if (in.command.equals("patch-store")){
-				String num = in.getArg(0);
-				try { 
-					Integer.parseInt(num); 
-				} catch(NumberFormatException e) { 
-					throw new RuntimeException("Argument must be a patch index");
+			} else if (in.command.equals("patch-load")) {
+				initDbClient();
+				img = dbClient.getPatch(in.getArgInt(0));
+
+				if (img == null) {
+					throw new RuntimeException("Could not read patch");
 				}
+			} else if (in.command.equals("reconstruct")){
 				initDbClient();
-				dbClient.storePatch(in.getArg(0), img);
-			}else if (in.command.equals("patchify")){
-				String patchSize = in.getArg(0);
-				initDbClient();
-				dbClient.patchify(img, patchSize);
-			}
-			else if (in.command.equals("patch-load")){
-				String num = in.getArg(0);
-				try { 
-					Integer.parseInt(num); 
-				} catch(NumberFormatException e) { 
-					throw new RuntimeException("Argument must be a patch index");
-				}
-				img = loadPatch(in.getArg(0));
-			}else if (in.command.equals("patchify-wrapper")){
-				img = loadImage(in.getArg(0), in.getArg(1));
-				initDbClient();
-				String imgName = in.getArg(2);
-				dbClient.storeImage(imgName, img);
-				Vector patchNumbers = dbClient.patchify(img, in.getArg(3));
-				
-				dbClient.storePointers(patchNumbers, imgName);
-				
-			}else if (in.command.equals("reconstruct")){
-				String imgName = in.getArg(0);
-				initDbClient();
-				Vector<PointerData> patches = dbClient.getPatches(imgName);
-				img = dbClient.reconstructImage(patches);
-			}else if (in.command.equals("clean")){
+				img = dbClient.getImageReconstructed(in.getArgInt(0));
+			} else if (in.command.equals("clean")) {
 				initDbClient();
 				dbClient.clean();
-			}else if (in.command.equals("random-sample")){
+			} else if (in.command.equals("random-sample")) {
 				//TODO: This doesn't really do anything right now.
 				initDbClient();
 				//TODO: add try/catch?
 				dbClient.randomSample(Double.parseDouble(in.getArg(0)));
-			}
-			else {
+			} else {
 				display("Error: unknown command");
 			}
 			display("Ok");

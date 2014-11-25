@@ -1,5 +1,6 @@
 package db_proj;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.Toolkit;
@@ -81,13 +82,62 @@ public class ImageUtils {
         //t.start();
 	}
 	
+	public static void saveImage(BufferedImage image, String format, String file) throws IOException {
+		ImageIO.write(image, format, new File(file));
+	}
 	
-	public static Vector<Double> computeSimilarity(Image imageA, Image imageB, Constants.SimilarityType simType){
-		//TODO: IMPLEMENT ME
+	public static double[] toRgbVector(BufferedImage img) {
+		double [] res = new double[img.getWidth() * img.getHeight() * 3];
+		for (int x = 0; x < img.getWidth(); ++x) {
+			for (int y = 0; y < img.getHeight(); ++y) {
+				Color rgb = new Color(img.getRGB(x, y));
+				int idx = 3 * (y * img.getWidth() + x);
+				res[idx] = rgb.getRed();
+				res[idx + 1] = rgb.getGreen();
+				res[idx + 2] = rgb.getBlue();
+			}
+		}
+		return res;
+	}
+	
+	public static double[] toLuv(double[] rgb) {
+		double [] res = new double[rgb.length];
+		
+		int elems = rgb.length / 3;
+		for (int i = 0; i < elems; ++i) {
+			int idx = i * 3;
+			double[] luv = LuvColor.toLuv(
+					LuvColor.toXYZ(rgb[idx], rgb[idx + 1], rgb[idx + 2]));
+			res[idx] = luv[0];
+			res[idx + 1] = luv[1];
+			res[idx + 2] = luv[2];
+		}
+		return res;
+	}
+	
+	public static Vector<Double> computeDistance(BufferedImage imageA, BufferedImage imageB) {
+		double[] v1 = toLuv(toRgbVector(imageA));
+		double[] v2 = toLuv(toRgbVector(imageB));
+		assert v1.length == v2.length;
+		
+		return computeDistance(v1, v2);
+	}
+	
+	public static Vector<Double> computeDistance(double[] v1, double[] v2) {
+		double [] dist = new double[3];
+		dist[0] = dist[1] = dist[2] = 0.0;
+		int elems = v1.length / 3;
+		for (int i = 0; i < elems; ++i) {
+			for (int c = 0; c < 3; ++c) {
+				dist[c] += Math.pow(v1[i * 3 + c] - v2[i * 3 + c], 2.0) / elems;
+			}
+		}
+		
+		//System.out.println("Distance = " + dist[0] + ", " + dist[1] + ", " + dist[2]);
 		Vector<Double> retVector = new Vector<Double>();
-		retVector.add(0.0);
-		retVector.add(0.0);
-		retVector.add(0.0);
+		retVector.add(dist[0]);
+		retVector.add(dist[1]);
+		retVector.add(dist[2]);
 		return retVector;
 	}
 }
