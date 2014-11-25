@@ -565,7 +565,8 @@ public class DatabaseClient {
 	}
 
 	public void clean() throws SQLException, IOException {
-		Runtime.getRuntime().exec( "psql -d imgtest -f ../schemas/reset.sql && psql -d imgtest -f ../schemas/schema.sql");
+		Runtime.getRuntime().exec( "psql -d imgtest -f ../schemas/reset.sql");
+		Runtime.getRuntime().exec( "psql -d imgtest -f ../schemas/schema.sql");
 	}
 
 	public void randomSample(double percentage) throws SQLException {
