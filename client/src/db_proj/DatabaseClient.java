@@ -1,5 +1,6 @@
 package db_proj;
 
+import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
@@ -90,6 +91,17 @@ public class DatabaseClient {
 	 * @return id of the stored image
 	 */
 	public int storeImage(BufferedImage image, String name) throws IOException, SQLException {
+		
+		
+		BufferedImage newImage = new BufferedImage(Constants.getSmallSize(), Constants.getSmallSize(), image.getType());
+
+		Graphics g = newImage.createGraphics();
+		g.drawImage(image, 0, 0, Constants.getSmallSize(), Constants.getSmallSize(), null);
+		g.dispose();
+		image = newImage;
+		
+		
+		
 		int imgId = insertImage(image, name == null ? "" : name);
 		Vector<PointerData> patchInfo = patchify(image, Constants.getPatchSize());
 		storePointers(patchInfo, imgId);

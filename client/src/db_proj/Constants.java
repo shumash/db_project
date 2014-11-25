@@ -10,12 +10,17 @@ public class Constants {
 	
 	private Vector<Double> maxDistance;
 	private int patchSize = 10;
+	private int smallSize = 500;
 	private String hashVectorsFile = new String("../data/hash_vectors_rand10.txt");
 	
 	private static Constants singleton = null;
 	
 	public static Vector<Double> getMaxDistance(){
 		return getSingleton().maxDistance;
+	}
+	
+	public static int getSmallSize(){
+		return getSingleton().smallSize;
 	}
 	
 	public static int getPatchSize(){
