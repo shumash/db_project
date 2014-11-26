@@ -60,7 +60,16 @@ Given these two equations, for a fixed $m$ and $n$, we can easily see that our c
 	p < \frac{m^2 * (3*n^2 - 8) * i}{3*n^4}
 \end{equation}
 
-As long as we choose a similarity threshold such that new image patches get added at a rate that guarantees this inequality is satisfied, our compressive method of image storage will save space.
+As long as we choose a similarity threshold such that new image patches get added at a rate that guarantees this inequality is satisfied, our compressive method of image storage will save space.  Figure \ref{fig:optcost} shows an example of how the optimal storage cost changes with different patch and image counts, where the optimal cost is defined as $c_o = \min{(c_p, c_i)}$; in other words, storing the images using the less expensive method.
+
+ \begin{figure}
+%\hspace{-25mm}
+%\centering
+\includegraphics[width=1\linewidth]{Figures/PatchCosts.png}
+\caption{A graph demonstrating how $c_o$ changes with $i$ and $p$ for $m=100$ and $n=10$.  Note the line of discontinuity where $p = 357.3 i$ - this is the line where the minimum costs switch.}
+\label{fig:optcost}
+\end{figure}
+
 
 \subsection{Sampling strategies}
 
