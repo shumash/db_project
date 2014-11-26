@@ -234,7 +234,7 @@ public class Client {
 		display("img-store [name] - stores loaded image with name, automatically patches everything");
 		display("patch-load [id] - load or reload an image patch into local image variable");
 		display("reconstruct [id] - reconstruct image from patches and load into local image variable" );
-		display("clean");
+		display("clean [db] - clean the database.  Pass 'db' in for [db] to do foreign, anything else will be resolved as local");
 		display("random-sample [percentage]");
 		display("-----------------");
 	}
@@ -266,7 +266,7 @@ public class Client {
 				img = dbClient.getImageReconstructed(in.getArgInt(0));
 			} else if (in.command.equals("clean")) {
 				initDbClient();
-				dbClient.clean();
+				dbClient.clean(in.getArg(0));
 			} else if (in.command.equals("random-sample")) {
 				//TODO: This doesn't really do anything right now.
 				initDbClient();

@@ -566,10 +566,14 @@ public class DatabaseClient {
 		return best;
 	}
 
-	public void clean() throws SQLException, IOException {
-		//Process proc = Runtime.getRuntime().exec( "psql -d imgtest -f ../schemas/reset.sql");
+	public void clean(String db) throws SQLException, IOException {
+		Process proc;
 		
-		Process proc = Runtime.getRuntime().exec("psql -h vise3.csail.mit.edu -U zoya -d zoya -f ../schemas/reset.sql");
+		if (db.equals("db")){
+			proc = Runtime.getRuntime().exec("psql -h vise3.csail.mit.edu -U zoya -d zoya -f ../schemas/reset.sql");
+		}else{
+			proc = Runtime.getRuntime().exec( "psql -d " + db + " -f ../schemas/reset.sql");
+		}
 		
 		InputStream stdin = proc.getInputStream();
 		InputStreamReader isr = new InputStreamReader(stdin);
@@ -590,8 +594,11 @@ public class DatabaseClient {
 			e.printStackTrace();
 		}
 		
-		
-		proc = Runtime.getRuntime().exec( "psql -h vise3.csail.mit.edu -U zoya -d zoya -f ../schemas/schema.sql");
+		if (db.equals("db")){
+			proc = Runtime.getRuntime().exec( "psql -h vise3.csail.mit.edu -U zoya -d zoya -f ../schemas/schema.sql");
+		}else{
+			proc = Runtime.getRuntime().exec( "psql -d " + db + " -f ../schemas/schema.sql");
+		}
 		
 		stdin = proc.getInputStream();
 		isr = new InputStreamReader(stdin);
