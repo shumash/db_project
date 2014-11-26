@@ -567,7 +567,9 @@ public class DatabaseClient {
 	}
 
 	public void clean() throws SQLException, IOException {
-		Process proc = Runtime.getRuntime().exec( "psql -d imgtest -f ../schemas/reset.sql");
+		//Process proc = Runtime.getRuntime().exec( "psql -d imgtest -f ../schemas/reset.sql");
+		
+		Process proc = Runtime.getRuntime().exec("psql -h vise3.csail.mit.edu -U zoya -d zoya -f ../schemas/reset.sql");
 		
 		InputStream stdin = proc.getInputStream();
 		InputStreamReader isr = new InputStreamReader(stdin);
@@ -589,7 +591,7 @@ public class DatabaseClient {
 		}
 		
 		
-		Runtime.getRuntime().exec( "psql -d imgtest -f ../schemas/schema.sql");
+		proc = Runtime.getRuntime().exec( "psql -h vise3.csail.mit.edu -U zoya -d zoya -f ../schemas/schema.sql");
 		
 		stdin = proc.getInputStream();
 		isr = new InputStreamReader(stdin);

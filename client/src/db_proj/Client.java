@@ -166,7 +166,11 @@ public class Client {
 		String line = stdin.readLine();
 		CommandArgs args = new CommandArgs(line);
 		if (args.numArgs() == 0) {
-			res.setLocalUrl(args.command);
+			if (args.command.equals("db")){
+				res.setUrl("vise3.csail.mit.edu", "5432", "zoya");
+			}else{
+				res.setLocalUrl(args.command);
+			}
 		} else {
 			res.setUrl(args.command, args.getArg(0), args.getArg(1));
 		}
