@@ -4,10 +4,12 @@ import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -565,8 +567,48 @@ public class DatabaseClient {
 	}
 
 	public void clean() throws SQLException, IOException {
-		Runtime.getRuntime().exec( "psql -d imgtest -f ../schemas/reset.sql");
+		Process proc = Runtime.getRuntime().exec( "psql -d imgtest -f ../schemas/reset.sql");
+		
+		InputStream stdin = proc.getInputStream();
+		InputStreamReader isr = new InputStreamReader(stdin);
+		BufferedReader br = new BufferedReader(isr);
+
+		String line = null;
+
+
+		while ( (line = br.readLine()) != null)
+		     System.out.println(line);
+
+
+		int exitVal = 0;
+		try {
+			exitVal = proc.waitFor();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		
 		Runtime.getRuntime().exec( "psql -d imgtest -f ../schemas/schema.sql");
+		
+		stdin = proc.getInputStream();
+		isr = new InputStreamReader(stdin);
+		br = new BufferedReader(isr);
+
+		line = null;
+
+		while ( (line = br.readLine()) != null)
+		     System.out.println(line);
+
+
+		exitVal = 0;
+		try {
+			exitVal = proc.waitFor();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
 	}
 
 	public void randomSample(double percentage) throws SQLException {
