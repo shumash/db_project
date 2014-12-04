@@ -1,6 +1,6 @@
 Things we still need to add to the report, with people who would probably be best suited to add to it / an attempt to balance out the work.
 
-1. Related work section - Zoya
+1. Related work section - Zoya, Wei(I can help adding more)
 2. Summary on LSH - Masha
 3. Slight expansion of similarity - Wei
 4. Description of our system and how it uses LSH and similarity - Masha

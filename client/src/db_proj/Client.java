@@ -1,12 +1,12 @@
 package db_proj;
 
 import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.ConnectException;
 import java.sql.SQLException;
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 /**
  * Front-end client / interpreter that interacts with the
@@ -32,7 +32,7 @@ public class Client {
 	 * Main function.
 	 * @param args - expects no arguments
 	 */
-	public static void main(String[] args) {
+	public static void main(String[] args) throws FileNotFoundException {
 		Client client = new Client();
 		client.run();
 	}
@@ -40,8 +40,25 @@ public class Client {
 	/**
 	 * Prints initial help message and configuration.
 	 */
-	public void startInterpreter() {
-		inputStreamReader = new InputStreamReader(System.in);
+	public void startInterpreter()  {
+
+        if(Constants.BATCH_INSERT){
+            try {
+                inputStreamReader = new InputStreamReader(new FileInputStream("input"));
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+        }else if(Constants.BATCH_RECONSTRUCT){
+            try {
+                inputStreamReader = new InputStreamReader(new FileInputStream("batchReconstruct"));
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
+        else{
+            inputStreamReader = new InputStreamReader(System.in);
+        }
+
 		stdin = new BufferedReader(inputStreamReader);
 
 		display("Starting client");
@@ -223,7 +240,7 @@ public class Client {
 		return res;
 	}
 
-	/**
+    /**
 	 * Prints help info.
 	 */
 	public void printHelp() {
@@ -235,7 +252,9 @@ public class Client {
 		display("patch-load [id] - load or reload an image patch into local image variable");
 		display("reconstruct [id] - reconstruct image from patches and load into local image variable" );
 		display("clean [db] - clean the database.  Pass 'db' in for [db] to do foreign, anything else will be resolved as local");
-		display("random-sample [percentage]");
+		display("random-sample [number]  - randomly sample the given number of images from the database and compress them");
+        display("upload-all [folder: images in this folder will all be uploaded] - load all images, but do not compress");
+        display("get-sizes -get the sizes of the database, the tables");
 		display("-----------------");
 	}
 
@@ -245,10 +264,26 @@ public class Client {
 				printHelp();
 			} else if (in.command.equals("img-load")) {
 				img = loadImage(in.getArg(0), in.getArg(1));
-			} else if (in.command.equals("img-store")) {
+			} else if (in.command.equals("upload-all")) {
+                String folder = in.getArg(0);
+                initDbClient();
+                long startTime = new Date().getTime();
+                for (File file : new File(folder).listFiles()) {
+                    try {
+                        img = loadImage("local", file.getAbsolutePath());
+                        System.out.println("Uploading file: " + file.getName());
+                    } catch (RuntimeException e) {
+                        System.out.println("Could not read file: " + file.getName());
+                    }
+                    dbClient.insertImage(img, file.getName());
+                }
+                System.out.println("Finished in " + (new Date().getTime() - startTime) + " ms");
+            } else if (in.command.equals("img-store")) {
 				initDbClient();
+                long startTime = new Date().getTime();
 				dbClient.storeImage(img, in.getArg(0));
-			} else if (in.command.equals("img-show")) {
+                System.out.println("Finished in " + (new Date().getTime() - startTime) + " ms");
+            } else if (in.command.equals("img-show")) {
 				if (img != null) {
 					ImageUtils.showImage(img);
 				} else {
@@ -263,16 +298,39 @@ public class Client {
 				}
 			} else if (in.command.equals("reconstruct")){
 				initDbClient();
+                long startTime = new Date().getTime();
 				img = dbClient.getImageReconstructed(in.getArgInt(0));
+                System.out.println("Finished in " + (new Date().getTime() - startTime) + " ms");
 			} else if (in.command.equals("clean")) {
 				initDbClient();
 				dbClient.clean(in.getArg(0));
 			} else if (in.command.equals("random-sample")) {
-				//TODO: This doesn't really do anything right now.
 				initDbClient();
-				//TODO: add try/catch?
-				dbClient.randomSample(Double.parseDouble(in.getArg(0)));
-			} else {
+                List<String> files = dbClient.randomSample(Integer.parseInt(in.getArg(0)));
+                for (String file : files) {
+                    System.out.println("Fetching " + file);
+                    img = loadImage("db", file);
+                    System.out.println("Storing " + file);
+                    long startTime = new Date().getTime();
+                    dbClient.storeImage(img, in.getArg(0));
+                    System.out.println("Finished in " + (new Date().getTime() - startTime) + " ms");
+                }
+            } else if(in.command.equals("get-sizes")){
+                initDbClient();
+                String[] sizes = dbClient.getAllSizes();
+                List<String> names = new ArrayList<String>();
+                names.add("patches");
+                names.add("patch_pointers");
+                names.add("patch_hashes");
+                names.add("images");
+                System.out.println("zoya database size: " + sizes[0]);
+                System.out.println(names.get(0) + " table size: " + sizes[1]);
+                System.out.println(names.get(1) + " table size: " + sizes[2]);
+                System.out.println(names.get(2) + " table size: " + sizes[3]);
+                System.out.println(names.get(3) + " table size: " + sizes[4]);
+
+            }
+            else {
 				display("Error: unknown command");
 			}
 			display("Ok");

@@ -1,19 +1,13 @@
 package db_proj;
 
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Image;
-import java.awt.Toolkit;
+import javax.imageio.ImageIO;
+import javax.swing.*;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
-
-import javax.imageio.ImageIO;
-import javax.swing.ImageIcon;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
 
 /**
  * Encapsulates low-level image utilities, mostly as static methods.
@@ -51,7 +45,7 @@ public class ImageUtils {
 	 */
 	public static void showImage(Image image) {
 		JFrame f = new JFrame();
-	    f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+	    //f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	    ImageIcon icon = new ImageIcon(image);
 	    JLabel lbl = new JLabel(icon);
 	    f.getContentPane().add(lbl);

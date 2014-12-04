@@ -5,8 +5,10 @@ import java.util.Vector;
 public class Constants {
 	
 	public static int PATCH_CACHE_SIZE = 1000;  // patches
-	public static int HASH_BIN_SIZE = 30;
+	public static int HASH_BIN_SIZE = 20;
 	public static boolean ENABLE_BRUTE_NEAREST_NEIGHBOR = false;
+    public static boolean BATCH_INSERT = true;
+    public static boolean BATCH_RECONSTRUCT = false;
 	
 	private Vector<Double> maxDistance;
 	private int patchSize = 10;

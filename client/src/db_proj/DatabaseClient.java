@@ -1,25 +1,13 @@
 package db_proj;
 
-import java.awt.Graphics;
-import java.awt.Point;
+import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Vector;
-
-import javax.imageio.ImageIO;
+import java.io.*;
+import java.sql.*;
+import java.util.*;
+import java.util.List;
 
 
 /** Holds a connection to a remote postgres server;
@@ -165,7 +153,7 @@ public class DatabaseClient {
 	 * @throws IOException
 	 * @throws SQLException
 	 */
-	private int insertImage(BufferedImage image, String name) throws IOException, SQLException {
+    public int insertImage(BufferedImage image, String name) throws IOException, SQLException {
 		int id = getNextImageId();
 		
 		// TODO: add warning if img with same name already exists
@@ -188,7 +176,7 @@ public class DatabaseClient {
 	 * LOW-LEVEL function: Stores just the patch in the database.
 	 * 
 	 * @param image
-	 * @param name
+	 * @param hashes
 	 * @return image id in the database
 	 * @throws IOException
 	 * @throws SQLException
@@ -212,17 +200,11 @@ public class DatabaseClient {
 	}
 	
 	private void insertHashes(int patchId, int[] hashes) throws SQLException {
-		StringBuffer sb = new StringBuffer("INSERT INTO patch_hashes VALUES (?");
-		for (int i = 0; i < hashes.length; ++i) {
-			sb.append(",? ");
-		}
-		sb.append(")");
+		StringBuffer sb = new StringBuffer("INSERT INTO patch_hashes VALUES (?, ?)");
 		
 		PreparedStatement ps  = conn.prepareStatement(sb.toString());
-		ps.setInt(1, patchId);
-		for (int i = 0; i < hashes.length; ++i) {
-			ps.setInt(i + 2, hashes[i]);
-		}
+        ps.setInt(1, patchId);
+		ps.setInt(2, computeSingleIntegerHash(hashes));
 		ps.executeUpdate();
 		ps.close();
 	}
@@ -304,7 +286,7 @@ public class DatabaseClient {
 	}
 	
 	public int getCountOf(String tableName) throws SQLException {
-		PreparedStatement ps = conn.prepareStatement("SELECT COUNT(*) FROM " + tableName);
+		PreparedStatement ps = conn.prepareStatement("SELECT MAX(id) FROM " + tableName);
 		ResultSet rs = ps.executeQuery();
 		int size = 0;
 		if (rs.next()) {
@@ -320,7 +302,7 @@ public class DatabaseClient {
 	 * have good matches. DOES NOT STORE patch pointer data.
 	 * 
 	 * @param image
-	 * @param patchSize
+	 * @param pSize
 	 * @return
 	 * @throws SQLException
 	 * @throws IOException
@@ -338,34 +320,140 @@ public class DatabaseClient {
 
 		int horPatches = image.getWidth() / pSize;
 		int vertPatches = image.getHeight() / pSize;
+        List<BufferedImage> patches = new ArrayList<BufferedImage>();
 		for (int i = 0; i < horPatches; i++){
 			for (int j = 0; j < vertPatches; j++) {
 				BufferedImage patch = image.getSubimage(i * pSize, 
 						j * pSize, 
 						pSize, 
 						pSize);
-
-				int pointerNum = maybeInsertPatch(patch);
-				retVec.add(new PointerData(pointerNum, i * pSize, j * pSize));
+                patches.add(patch);
 			}
 		}
-
-		return retVec;
+        PatchDedup dedup = new PatchDedup(patches.toArray(new BufferedImage[patches.size()]));
+        int initPatchId = getNextPatchId();
+        Set<Integer> hashes = dedup.getUniqueHashesForThisImage();
+        Map<Integer, Map<Integer, BufferedImage>> hashQueryResult = getExistingHashesWithPatchIdsAndPatches(hashes);
+        dedup.setRemoteExistingHashes(patchCache, hashQueryResult, initPatchId);
+        Map<Integer, BufferedImage> patchesToStore = dedup.getPatchesToStore();
+        batchInsertPatches(patchesToStore);
+        int[] pointersToStore = dedup.getPointersToStore();
+        int index = 0;
+        for (int i = 0; i < horPatches; i++) {
+            for (int j = 0; j < vertPatches; j++) {
+                retVec.add(new PointerData(pointersToStore[index], i * pSize, j * pSize));
+                index++;
+            }
+        }
+        return retVec;
 	}
 
-	private void storePointers(Vector<PointerData> patchInfo, int imgId) throws SQLException {
+    private Vector<PointerData> patchifySlow(BufferedImage image, int pSize) throws SQLException, IOException {
+        Vector<PointerData> retVec = new Vector<PointerData>();
+        int iw = image.getWidth();
+        if (iw % pSize != 0) {
+            throw new RuntimeException("patch size not a factor of image width");
+        }
+        int ih = image.getHeight();
+        if (ih % pSize != 0) {
+            throw new RuntimeException("patch size not a factor of image height");
+        }
+
+        int horPatches = image.getWidth() / pSize;
+        int vertPatches = image.getHeight() / pSize;
+        for (int i = 0; i < horPatches; i++){
+            for (int j = 0; j < vertPatches; j++) {
+                BufferedImage patch = image.getSubimage(i * pSize,
+                        j * pSize,
+                        pSize,
+                        pSize);
+
+                int pointerNum = maybeInsertPatch(patch);
+                retVec.add(new PointerData(pointerNum, i * pSize, j * pSize));
+            }
+        }
+
+        return retVec;
+    }
+
+
+    private void batchInsertPatches(Map<Integer, BufferedImage> patchesToStore) throws SQLException, IOException {
+        System.out.print("Writing patch data and hashes to database... ");
+        PreparedStatement ps = conn.prepareStatement("INSERT INTO patches VALUES (?, ?)");
+        PreparedStatement psHash = conn.prepareStatement("INSERT INTO patch_hashes VALUES (?, ?)");
+
+        for (Map.Entry<Integer, BufferedImage> entry : patchesToStore.entrySet()) {
+            ByteArrayOutputStream os = new ByteArrayOutputStream();
+            ImageIO.write(entry.getValue(),"png", os);
+            InputStream fis = new ByteArrayInputStream(os.toByteArray());
+            int hash = getHash(entry.getValue());
+
+            ps.setInt(1, entry.getKey());
+            ps.setBinaryStream(2, fis, (int)os.toByteArray().length);
+            ps.addBatch();
+
+            psHash.setInt(1, entry.getKey());
+            psHash.setInt(2, hash);
+            psHash.addBatch();
+            fis.close();
+        }
+        ps.executeBatch();
+        ps.close();
+        psHash.executeBatch();
+        psHash.close();
+        System.out.println("done.");
+    }
+
+
+    private int getHash(BufferedImage patch) {
+        double[] imgVector = ImageUtils.toLuv(ImageUtils.toRgbVector(patch));
+        int[] hashes = lshHelper.getHashes(imgVector, 10);
+        return computeSingleIntegerHash(hashes);
+    }
+
+
+
+    private Map<Integer, Map<Integer, BufferedImage>> getExistingHashesWithPatchIdsAndPatches(Set<Integer> hashes) throws SQLException, IOException {
+        System.out.print("Querying database for similar patches... ");
+        StringBuilder sb = new StringBuilder("SELECT patch_id, hash, img FROM patch_hashes inner join patches ON patch_id = patches.id WHERE hash in (");
+        for (Integer hash : hashes) {
+            sb.append(hash);
+            sb.append(",");
+        }
+        sb.deleteCharAt(sb.length() - 1);
+        sb.append(")");
+        PreparedStatement ps = conn.prepareStatement(sb.toString());
+        ResultSet rs = ps.executeQuery();
+        Map<Integer, Map<Integer, BufferedImage>> result = new HashMap<Integer, Map<Integer, BufferedImage>>();
+        while(rs.next()) {
+            int hash = rs.getInt("hash");
+            int patchId = rs.getInt("patch_id");
+            BufferedImage image = getImgFromRes(rs, 3);
+            if (!result.containsKey(hash)) {
+                result.put(hash, new HashMap<Integer, BufferedImage>());
+            }
+            result.get(hash).put(patchId, image);
+        }
+        System.out.println("done.");
+        return result;
+    }
+
+
+    private void storePointers(Vector<PointerData> patchInfo, int imgId) throws SQLException {
+        System.out.print("Writing patch pointers to database... ");
+        PreparedStatement ps = conn.prepareStatement("INSERT INTO patch_pointers VALUES (?, ?, ?, ?)");
 		for (int i = 0; i < patchInfo.size(); i++){
 			PointerData pd = patchInfo.get(i);
-			PreparedStatement ps = conn.prepareStatement("INSERT INTO patch_pointers VALUES (?, ?, ?, ?)");
 			ps.setInt(1, imgId);
 			ps.setInt(2, pd.patchNum.intValue());
 			ps.setInt(3, pd.x.intValue());
 			ps.setInt(4, pd.y.intValue());
-			ps.executeUpdate();
-			ps.close();
+			ps.addBatch();
 		}
-
-	}
+        ps.executeBatch();
+        ps.close();
+        System.out.println("done.");
+    }
 
 	private Vector<PointerData> getPatches(int imgId) throws SQLException {
 		PreparedStatement ps = conn.prepareStatement("SELECT patch_id, x, y FROM patch_pointers WHERE from_image = ?");
@@ -485,13 +573,8 @@ public class DatabaseClient {
 	}
 	
 	ArrayList<Integer> getLikelySimilarPatchIds(int[] hashes, int[] hashes_alt) throws SQLException {
-		StringBuffer sb = new StringBuffer("SELECT patch_id FROM patch_hashes WHERE ");
-		for (int h = 0; h < hashes.length; ++h) {
-			if (h > 0) {
-				sb.append(" and ");
-			}
-			sb.append("hash" + h + " in (" + hashes[h] + "," + hashes_alt[h] + ")");
-		}
+        int hash = computeSingleIntegerHash(hashes);
+		StringBuffer sb = new StringBuffer("SELECT patch_id FROM patch_hashes WHERE hash = " + hash);
 		
 		ArrayList<Integer> res = new ArrayList();
 		PreparedStatement ps  = conn.prepareStatement(sb.toString());
@@ -504,8 +587,17 @@ public class DatabaseClient {
 		ps.close();
 		return res;
 	}
-	
-	public SimilarPatchInfo findMostSimilarPatch(
+
+    private int computeSingleIntegerHash(int[] hashes) {
+        int result = 0;
+        for(int i=0;i<hashes.length;i++) {
+            result <<= 3;
+            result += hashes[i];
+        }
+        return result;
+    }
+
+    public SimilarPatchInfo findMostSimilarPatch(
 			BufferedImage patch, int[] hashes, int[] hashes_alt) throws SQLException, IOException {
 		ArrayList<Integer> patchIds = getLikelySimilarPatchIds(hashes, hashes_alt);
 		System.out.println("Selected " + patchIds.size() + " likely matches from " + getPatchTableSize() + " patches");
@@ -620,13 +712,64 @@ public class DatabaseClient {
 
 	}
 
-	public void randomSample(double percentage) throws SQLException {
-		PreparedStatement ps = conn.prepareStatement("select * from images where random() < ?");
-		ps.setDouble(1, percentage);
+	public List<String> randomSample(int number) throws SQLException {
+		PreparedStatement ps = conn.prepareStatement("select * from images order by random() limit ?");
+		ps.setDouble(1, number);
 		ResultSet rs = ps.executeQuery();
+        List<String> result= new ArrayList<String>();
 		while (rs.next()){
-			System.out.println(rs.getString("imgname"));
+            result.add(rs.getString("imgname"));
 		}
+        return result;
 		
 	}
+
+    public String getTableSize(String tableName) throws SQLException {
+        StringBuffer sb = new StringBuffer("SELECT pg_size_pretty(pg_relation_size('");
+        sb.append(tableName);
+        sb.append("'))");
+        PreparedStatement ps  = conn.prepareStatement(sb.toString());
+        ResultSet rs = ps.executeQuery();
+        rs.next();
+        String value = rs.getString(1);
+        rs.close();
+        return value;
+    }
+
+    public String getDatabaseSize(String dbName) throws SQLException {
+        StringBuffer sb = new StringBuffer("SELECT pg_size_pretty(pg_database_size('");
+        sb.append(dbName);
+        sb.append("'))");
+        PreparedStatement ps  = conn.prepareStatement(sb.toString());
+        ResultSet rs = ps.executeQuery();
+        rs.next();
+        String value = rs.getString(1);
+        rs.close();
+        return value;
+
+
+    }
+
+    public String[] getAllSizes(){
+        String[] result = new String[5];
+        List<String> names = new ArrayList<String>();
+        names.add("patches");
+        names.add("patch_pointers");
+        names.add("patch_hashes");
+        names.add("images");
+
+        try {
+            result[0]=getDatabaseSize("zoya");
+            for(int i=1; i<5;i++){
+                result[i]=getTableSize(names.get(i-1));
+            }
+            return result;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        //return 0 if things went wrong;
+        return result;
+    }
+
 }
