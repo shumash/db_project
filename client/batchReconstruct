@@ -1,0 +1,15 @@
+upload-all D:\smalltest
+db
+zoya
+random-sample 10
+reconstruct 1
+img-show
+reconstruct 2
+img-show
+reconstruct 3
+img-show
+reconstruct 4
+img-show
+reconstruct 5
+img-show
+
