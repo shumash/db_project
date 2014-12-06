@@ -41,8 +41,9 @@ At larger patch granularities, each patch contains more image structure, and thu
 %In the extreme case, a patch is equal to one pixel, so the probability of an identical color patch is $\frac{1}{255^3}$, assuming 3 color channels. This value is multiplied by itself as many times as there are pixels in a patch to find an identical patch. For our application, we are interested in similar patches, rather than identical ones (see sec.\ref{sec:simthresh}), and so this probability is higher but bounded by this value, and similarly scales with patch size. 
 
 \subsubsection{Cost Evaluation}
+\label{costeval}
 
-Assume for now that we choose to store $p$ patches in our auxiliary table.  In practice, we choose $p$ to be a function $p \colon Function \to \mathds{N}$ which maps from our similarity metric to a number of patches to store.  Assume also that each patch is square and composed of $n^2$ pixels, where $n$ is a user defined parameter.  We further assume that each pixel requires 3 bytes to store  and that each pointer is 8 bytes (a standard integer for a 64-bit system).  Under this "image only" scheme, in the case where we have $i$ images, the cost $c_i$ to store all the images in our database is:
+Assume for now that we choose to store $p$ patches in our auxiliary table.  In practice, we choose $p$ to be a function $p \colon S \to \mathds{N}$ which maps from our similarity metric to a number of patches to store.  Assume also that each patch is square and composed of $n^2$ pixels, where $n$ is a user defined parameter.  We further assume that each pixel requires 3 bytes to store  and that each pointer is 8 bytes (a standard integer for a 64-bit system).  Under this "image only" scheme, in the case where we have $i$ images, the cost $c_i$ to store all the images in our database is:
 
 \begin{equation}
 	c_i(i, m) = 3  i  m^2
@@ -54,7 +55,7 @@ In the case where we store pointers to patches, we have two tables: one table to
 	c_p(i, p, m, n) = 8 i (\frac{m}{n})^2 + 3  p  n^2
 \end{equation}.
 
-The first term is the cost of storing the pointer data, while the second term is the cost of storing the patch exemplars themselves.
+The first term is the cost of storing the pointer data, while the second term is the cost of storing the patch exemplars themselves.  The $"8"$ comes from the fact that we are dealing with very large image and patch tables ($ > 2 \times 10^9$ patches), and thus a \texttt{bigint} type is required to store the patch references.
 
 Given these two equations, for a fixed $m$ and $n$, we can easily see that our compressive scheme becomes more space-efficient when:
 
@@ -74,6 +75,8 @@ As long as we choose a similarity threshold such that new image patches get adde
 
 
 \subsection{Sampling strategies}
+
+TODO: Now that this is mentioned earlier, should this even go here?)
 
 A patch dictionary can be built up incrementally, adding new patches as new images are added to the database. A potential problem with this approach is that image reconstruction quality will tend to decrease with the order in which images are added, such that images added to the database earlier will tend to have more patches that correspond to them (see Fig.\ref{fig:sampStrategy} for an example). A strategy with a more even distribution of reconstruction quality over images involves starting with a batch of images, and seeding the dictionary by randomly sampling patches from a set of images from the batch. This is the strategy we employ. 
 
