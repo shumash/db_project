@@ -7,8 +7,9 @@ We formally describe our method in Sec.~\ref{ssec:overview}. To summarize,
 we first segment each image into patches and store them in the \texttt{patches} database.
 Only patches sufficiently different
 from all the patches in \texttt{patches} are stored (See Sec.~\ref{ssec:sim}).
-Instead of storing each image explicitly, we approximate it by storing pointers to the patches
-approximating its original patches. In Sec.~\ref{ssec:lsh}, we describe the
+%Instead of storing each image explicitly, we approximate it by storing pointers to the patches approximating its original patches. 
+In 
+Sec.~\ref{ssec:lsh}, we describe the
 search algorithm used to quickly retrieve similar patches, and in Sec.~\ref{ssec:reconst}
 we detail the indices that make image reconstruction faster. Finally, in
 Sec.~\ref{ssec:impl} we provide implementation details.
@@ -21,6 +22,16 @@ Our method is governed by the following parameters:
 \item $S$ - similarity function from two $n \times n$ images to $\mathbb{R}$
 \item $T$ - similarity threshold
 \end{itemize}
+
+In order to perform our lossy compression, we begin by creating a table of image patches.  These patches are chosen from a pre-computed dictionary, which is initially seeded from randomly selected pixel patches from the entire image database.   During the compression step, we partition our images into $\frac{m}{n}^2$ non-overlapping tiles, with the goal of mapping each tile to a patch in our patch table.  For each of these tiles, we then represent it using the patch from our table which is closest to the original image in some similarity space $S$.  If the closest patch is greater than $T$ away from the original image tile, we add that tile to our patch database and map the tile to it.  Assuming that our initial patch dictionary is distributed relatively uniformly over our input images, adding additional patches should be a rare procedure.  Thus, the space savings come from only needing to store an effective pointer for each tile, rather than the entire tile data.  Note that the minimum threshold on the similarity of tiles and patches guarantees that each compressed image is at least $\frac{mT}{n}$ similar its original counterpart (TODO: is this true?).
+
+With a large table of patches, finding the closest patch can be computationally expensive.  In order to speed up the search, we employ Local Sensitivity Hashing.  Although this softens the constraint that we always find the closest patch in the database for each tile, the closest patch is still found with very high probability, and in expectation the selected patch is still very close.
+
+Given all this, our compression problem formally can be stated as choosing a selection of patches and tile to patch mappings which minimizes the spaceof our patch table such that each image tile is at least $T$ similar to its mapped patch (TODO: formalize this with math).
+
+Given our pointer representation, we are able to construct the compressed image quite efficiently.  Given an image identifier, we iterate over all patch pointers stored with it.  TODO: Is LSH used here?
+
+
 The $n \times n$ patches are stored as byte data in the \texttt{patches} table.
 To allow image reconstruction, we also store $(m / n)^2$ patch pointers for
 each image in the \texttt{patch\_pointers} table. The full schema looks as follows:
