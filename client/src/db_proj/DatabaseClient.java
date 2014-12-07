@@ -703,6 +703,7 @@ public class DatabaseClient {
         List<String> result= new ArrayList<String>();
 		while (rs.next()){
             result.add(rs.getString("imgname"));
+            result.add(rs.getString("id"));
 		}
         return result;
 
@@ -755,6 +756,7 @@ public class DatabaseClient {
         //return 0 if things went wrong;
         return result;
     }
+
 
 }
 

@@ -15,7 +15,7 @@ import java.util.Random;
 import javax.imageio.ImageIO;
 
 public class Experimental {
-	
+
 	public static DatabaseClient establishConnection() {
 		DbConnectionInfo info = new DbConnectionInfo();
 		info.setLocalUrl("imgtest");
@@ -28,18 +28,19 @@ public class Experimental {
 	/**
 	 * @param args
 	 * @throws IOException
-	 * @throws SQLException 
+	 * @throws SQLException
 	 */
 	public static void main(String[] args) throws IOException, SQLException {
-        MockInsertImage();
+        //MockInsertImage();
+        DebugLoadImagesFromUrls();
     }
-	
+
 	public static void MockInsertImage() throws IOException, SQLException {
 		DatabaseClient dbc = establishConnection();
-		
+
 		//BufferedImage img = ImageUtils.loadImage("../tiny_data/test2.jpg");
 		//dbc.mockStoreImage(img, "mock");
-		
+
 		String folder = "../../../imgdata/IMG/tst";
 		ArrayList<String> files = new ArrayList<String>();
 		MiscUtils.listFilesForFolder(new File(folder), files);
@@ -67,7 +68,7 @@ public class Experimental {
 
         PrintStream output = new PrintStream(new File(outFile));
         Random rand = new Random();
-        
+
         ArrayList<String> files = new ArrayList<String>();
         MiscUtils.listFilesForFolder(new File(folder), files);
         int count = 0;
@@ -77,7 +78,7 @@ public class Experimental {
             BufferedImage img = ImageUtils.scaleCrop(ImageUtils.loadImage(full_file));
             List<BufferedImage> patches = ImageUtils.getSamplePatches(img, Constants.getPatchSize(), rand);
             for (BufferedImage patch_img : patches) {
-            	
+
                 PatchWrapper pwrapper = new PatchWrapper(patch_img);
                 MiscUtils.dumpToFile(pwrapper.getImgVector(), output);
                 output.flush();
@@ -87,11 +88,11 @@ public class Experimental {
     }
 
     public static void DebugLoadImagesFromUrls() {
-		String csvFile = "../data/manifest.txt";
+		String csvFile = "../data/manifest-sun2012.txt";
 		BufferedReader br = null;
 		String line = "";
 		String cvsSplitBy = "\t";
-		String prefix = "http://labelme.csail.mit.edu/Images";
+		String prefix = "http://people.csail.mit.edu/aespielberg/SUN2012/Images";
 
 		try {
 
@@ -127,7 +128,4 @@ public class Experimental {
 
 		System.out.println("Done");
 	}
-
-
-
 }

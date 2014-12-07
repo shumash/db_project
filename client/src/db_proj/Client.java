@@ -274,6 +274,7 @@ public class Client {
         display("upload-all [folder: images in this folder will all be uploaded] - load all images, but do not compress");
         display("get-sizes - get the sizes of the database, the tables");
         display("run-script [script location] - runs commands in the text file");
+        display("get-quality [number] - get the quality of image reconstruction by random-sampling");
 		display("-----------------");
 	}
 
@@ -291,19 +292,23 @@ public class Client {
                 ArrayList<String> files = new ArrayList<String>();
                 MiscUtils.listFilesForFolder(new File(folder), files);
                 initDbClient();
+                int counter = 0;
+                int[] ids = new int[files.size()];
                 timer.start();
                 for (String filename : files) {
                     String full_file = folder + "/" + filename;
                     try {
                         img = loadImage("local", full_file);
-                        dbClient.storeImage(img, filename);
+                        ids[counter]= dbClient.storeImage(img, filename);
+                        counter +=1;
                     } catch (Exception e) {
                         System.out.println("Could not load/store file: " + full_file);
                         //                        throw e;
                     }
                 }
                 SimpleTimer.timedLog("Finished batch-upload of " + files.size() +
-                                     " files in " + timer.getMs() + " ms\n");
+                        " files in " + timer.getMs() + " ms\n");
+                MiscUtils.writeImageIdsToFile("batchShowIds",ids);
             } else if (in.command.equals("img-store")) {
 				initDbClient();
 				timer.start();
@@ -334,7 +339,11 @@ public class Client {
 			} else if (in.command.equals("random-sample")) {
 				initDbClient();
                 List<String> files = dbClient.randomSample(Integer.parseInt(in.getArg(0)));
-                for (String file : files) {
+                List<String> fileNames = new ArrayList<String>();
+                for (int i = 0; i < files.size() / 2; i++) {
+                    fileNames.add(files.get(i*2));
+                }
+                for (String file : fileNames) {
                     System.out.println("Fetching " + file);
                     img = loadImage("db", file);
                     System.out.println("Storing " + file);
@@ -364,7 +373,32 @@ public class Client {
             	secondaryClient.startInterpreter();
             	secondaryClient.run();
                 System.out.println("Finished running script in " + timer.getMs() + " ms");
-            } else {
+            } else if(in.command.equals("get-quality")){
+                initDbClient();
+                timer.start();
+                List<String> imageFiles = dbClient.randomSample(Integer.parseInt(in.getArg(0)));
+                System.out.println("getting summs " + imageFiles.size()/2 );
+                double sum = 0;
+                int skipped = 0;
+                //List<Integer> imgIds = new ArrayList<Integer>();
+                for (int i = 0; i < imageFiles.size() / 2; i++) {
+                    int id = Integer.parseInt(imageFiles.get(i*2+1));
+                    System.out.println("ids: " + id);
+                    BufferedImage original = dbClient.getImage(id);
+                    BufferedImage reconstructed = dbClient.getImageReconstructed(id);
+                    if (reconstructed == null) {
+                        skipped +=1;
+                    }else{
+                        sum += ImageUtils.computeNewDistance(ImageUtils.getImgVector(original), ImageUtils.getImgVector(reconstructed));
+                    }
+
+                }
+
+                System.out.println("average quality of database is " + sum/(Integer.parseInt(in.getArg(0))-skipped));
+                System.out.println("Finished getting quality in " + timer.getMs() + " ms");
+
+            }
+            else {
 				display("Error: unknown command");
 			}
 			display("Ok");

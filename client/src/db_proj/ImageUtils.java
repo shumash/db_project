@@ -124,8 +124,23 @@ public class ImageUtils {
 		return computeNormChannelDistanceSquared(pw1.getImgVector(), pw2.getImgVector());
 	}
 
-	public static Vector<Double> computeNormChannelDistanceSquared(double[] v1, double[] v2) {
-            assert v1.length == v2.length;
+    public static double computeNewDistance(double[] v1, double[] v2) {
+        double dis = 0;
+        assert v1.length == v2.length;
+        double [] dist = new double[3];
+        dist[0] = dist[1] = dist[2] = 0.0;
+        int elems = v1.length / 3;
+        for (int i = 0; i < elems; ++i) {
+            for (int c = 0; c < 3; ++c) {
+                dis += Math.pow(v1[i * 3 + c] - v2[i * 3 + c], 2.0);
+            }
+        }
+        return Math.sqrt(dis)/elems*elems;
+    }
+
+
+    public static Vector<Double> computeNormChannelDistanceSquared(double[] v1, double[] v2) {
+        assert v1.length == v2.length;
 		double [] dist = new double[3];
 		dist[0] = dist[1] = dist[2] = 0.0;
 		int elems = v1.length / 3;
@@ -142,6 +157,7 @@ public class ImageUtils {
 		retVector.add(dist[2]);
 		return retVector;
 	}
+
 
 	public class ImgStats {
 		double[] mean = null;
@@ -191,5 +207,9 @@ public class ImageUtils {
 			}
 		}
         return res;
+    }
+
+    public static double[] getImgVector(BufferedImage img) {
+        return  ImageUtils.toLuv(ImageUtils.toRgbVector(img));
     }
 }

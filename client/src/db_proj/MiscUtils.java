@@ -2,6 +2,9 @@ package db_proj;
 
 import java.io.File;
 import java.io.PrintStream;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Vector;
 
@@ -37,5 +40,22 @@ public class MiscUtils {
             output.print(v[i] + " ");
         }
         output.print("\n");
+    }
+
+    static public void writeImageIdsToFile(String fileName, int[] imgIds){
+        PrintWriter fw= null;
+        try {
+            fw = new PrintWriter(fileName, "UTF-8");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        for (int id : imgIds) {
+            fw.println("reconstruct "+ id );
+            fw.println("img-show");
+        }
+        fw.flush();
+        fw.close();
     }
 }
