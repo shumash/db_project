@@ -6,3 +6,5 @@ CREATE TABLE patch_pointers(from_image int REFERENCES images(id), patch_id int R
 --       hash6 int, hash7 int, hash8 int, hash9 int);
 CREATE TABLE patch_hashes(patch_id int PRIMARY KEY REFERENCES patches(id), hash int);
 CREATE INDEX patch_hash ON patch_hashes(hash);
+CREATE TABLE img_meta (source_img int REFERENCES images(id), patch_id int REFERENCES patches(id));
+CREATE INDEX patch_id_index ON patches(id);

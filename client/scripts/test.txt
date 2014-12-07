@@ -1,0 +1,5 @@
+img-load local ../../../imgdata/abbey/sun_azyppckyfejqlkhx.jpg
+img-store sun_azyppckyfejqlkhx.jpg
+db
+zoya
+q

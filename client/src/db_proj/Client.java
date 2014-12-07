@@ -15,6 +15,9 @@ import java.util.List;
  *
  */
 public class Client {
+	// Utils
+	SimpleTimer timer = new SimpleTimer();
+
 	// User input reading
 	InputStreamReader inputStreamReader = null;
 	BufferedReader stdin = null;
@@ -28,37 +31,49 @@ public class Client {
 	// Client connected to the Database
 	private DatabaseClient dbClient = null;
 
+    public Client() {}
+
+    public Client(DatabaseClient inClient) {
+        dbClient = inClient;
+    }
+
 	/**
 	 * Main function.
 	 * @param args - expects no arguments
 	 */
 	public static void main(String[] args) throws FileNotFoundException {
 		Client client = new Client();
+
+		if (Constants.BATCH_INSERT) {
+			client.setCommandsFile("input");
+		} else if (Constants.BATCH_RECONSTRUCT) {
+			client.setCommandsFile("batchReconstruct");
+		}
+		client.startInterpreter();
 		client.run();
+	}
+
+	/**
+	 * Initializes from a file.
+	 * @throws FileNotFoundException
+	 */
+	public void setCommandsFile(String file) throws FileNotFoundException {
+		SimpleTimer.timedLog("Setting command stream to: " + file);
+		try {
+             inputStreamReader = new InputStreamReader(new FileInputStream(file));
+         } catch (FileNotFoundException e) {
+             e.printStackTrace();
+             throw e;
+         }
 	}
 
 	/**
 	 * Prints initial help message and configuration.
 	 */
 	public void startInterpreter()  {
-
-        if(Constants.BATCH_INSERT){
-            try {
-                inputStreamReader = new InputStreamReader(new FileInputStream("input"));
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            }
-        }else if(Constants.BATCH_RECONSTRUCT){
-            try {
-                inputStreamReader = new InputStreamReader(new FileInputStream("batchReconstruct"));
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            }
+        if (inputStreamReader == null) {
+        	inputStreamReader = new InputStreamReader(System.in);
         }
-        else{
-            inputStreamReader = new InputStreamReader(System.in);
-        }
-
 		stdin = new BufferedReader(inputStreamReader);
 
 		display("Starting client");
@@ -76,8 +91,6 @@ public class Client {
 	 * Runs infinite loop reading commands and processing them.
 	 */
 	public void run() {
-		startInterpreter();
-
 		// Adapted from: http://www.javapractices.com/topic/TopicAction.do?Id=79
 		String line = null;
 		while (!shouldQuit) {
@@ -141,7 +154,7 @@ public class Client {
 			}
 			return args[i];
 		}
-		
+
 		/**
 		 * Same as get argument, but parses the output into an integer.
 		 * @param i
@@ -175,17 +188,17 @@ public class Client {
 	/**
 	 * Prompts user for connection info.
 	 * @return resulting info
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	private DbConnectionInfo readConnectionInfo() throws IOException {
 		DbConnectionInfo res = new DbConnectionInfo();
-		prompt("Enter [host] [port] [db_name] OR [db_name] for localhost");
+		prompt("Enter [\"db\"] for remove server OR [local_db_name] for localhost");
 		String line = stdin.readLine();
 		CommandArgs args = new CommandArgs(line);
 		if (args.numArgs() == 0) {
 			if (args.command.equals("db")){
 				res.setUrl("vise3.csail.mit.edu", "5432", "zoya");
-			}else{
+			} else {
 				res.setLocalUrl(args.command);
 			}
 		} else {
@@ -199,7 +212,7 @@ public class Client {
 
 	/**
 	 * Initializes (if not yet) database client.
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	private void initDbClient() throws IOException {
 		if (dbClient == null) {
@@ -216,7 +229,7 @@ public class Client {
 
 	/**
 	 * Loads images from various sources.
-	 * 
+	 *
 	 * @param type web, db, or local
 	 * @param arg appropriate for type, i.e. url, index in database, or relative/absolute file path
 	 * @return loaded image
@@ -231,7 +244,12 @@ public class Client {
 			res = ImageUtils.loadWebImage(arg);
 		} else if (type.equals("db")){
 			initDbClient();
-			int imgId = dbClient.getImageId(arg);
+			int imgId = 0;
+            try {
+                imgId = Integer.parseInt(arg);
+            } catch (Exception e) {
+                imgId = dbClient.getImageId(arg);
+            }
 			res = dbClient.getImageOriginal(imgId);
 		}
 		if (res == null) {
@@ -254,11 +272,14 @@ public class Client {
 		display("clean [db] - clean the database.  Pass 'db' in for [db] to do foreign, anything else will be resolved as local");
 		display("random-sample [number]  - randomly sample the given number of images from the database and compress them");
         display("upload-all [folder: images in this folder will all be uploaded] - load all images, but do not compress");
-        display("get-sizes -get the sizes of the database, the tables");
+        display("get-sizes - get the sizes of the database, the tables");
+        display("run-script [script location] - runs commands in the text file");
 		display("-----------------");
 	}
 
 	private void handleCommand(CommandArgs in) {
+		timer.start();
+		System.out.println("Handling command: " + in.command);
 		try {
 			if (in.command.equals("h")) {
 				printHelp();
@@ -266,23 +287,28 @@ public class Client {
 				img = loadImage(in.getArg(0), in.getArg(1));
 			} else if (in.command.equals("upload-all")) {
                 String folder = in.getArg(0);
+                // Note: this is recursive
+                ArrayList<String> files = new ArrayList<String>();
+                MiscUtils.listFilesForFolder(new File(folder), files);
                 initDbClient();
-                long startTime = new Date().getTime();
-                for (File file : new File(folder).listFiles()) {
+                timer.start();
+                for (String filename : files) {
+                    String full_file = folder + "/" + filename;
                     try {
-                        img = loadImage("local", file.getAbsolutePath());
-                        System.out.println("Uploading file: " + file.getName());
-                    } catch (RuntimeException e) {
-                        System.out.println("Could not read file: " + file.getName());
+                        img = loadImage("local", full_file);
+                        dbClient.storeImage(img, filename);
+                    } catch (Exception e) {
+                        System.out.println("Could not load/store file: " + full_file);
+                        //                        throw e;
                     }
-                    dbClient.insertImage(img, file.getName());
                 }
-                System.out.println("Finished in " + (new Date().getTime() - startTime) + " ms");
+                SimpleTimer.timedLog("Finished batch-upload of " + files.size() +
+                                     " files in " + timer.getMs() + " ms\n");
             } else if (in.command.equals("img-store")) {
 				initDbClient();
-                long startTime = new Date().getTime();
-				dbClient.storeImage(img, in.getArg(0));
-                System.out.println("Finished in " + (new Date().getTime() - startTime) + " ms");
+				timer.start();
+				int id = dbClient.storeImage(img, in.getArg(0));
+                System.out.println("Finished in " + timer.getMs() + " ms");
             } else if (in.command.equals("img-show")) {
 				if (img != null) {
 					ImageUtils.showImage(img);
@@ -291,16 +317,17 @@ public class Client {
 				}
 			} else if (in.command.equals("patch-load")) {
 				initDbClient();
-				img = dbClient.getPatch(in.getArgInt(0));
+				PatchWrapper pw = dbClient.getPatch(in.getArgInt(0));
 
-				if (img == null) {
+				if (pw == null) {
 					throw new RuntimeException("Could not read patch");
 				}
+				img = pw.getImg();
 			} else if (in.command.equals("reconstruct")){
 				initDbClient();
-                long startTime = new Date().getTime();
+				timer.start();
 				img = dbClient.getImageReconstructed(in.getArgInt(0));
-                System.out.println("Finished in " + (new Date().getTime() - startTime) + " ms");
+                System.out.println("Finished in " + timer.getMs() + " ms");
 			} else if (in.command.equals("clean")) {
 				initDbClient();
 				dbClient.clean(in.getArg(0));
@@ -329,12 +356,20 @@ public class Client {
                 System.out.println(names.get(2) + " table size: " + sizes[3]);
                 System.out.println(names.get(3) + " table size: " + sizes[4]);
 
-            }
-            else {
+            } else if (in.command.equals("run-script")) {
+                initDbClient();
+                timer.start();
+            	Client secondaryClient = new Client(dbClient);
+            	secondaryClient.setCommandsFile(in.getArg(0));
+            	secondaryClient.startInterpreter();
+            	secondaryClient.run();
+                System.out.println("Finished running script in " + timer.getMs() + " ms");
+            } else {
 				display("Error: unknown command");
 			}
 			display("Ok");
 		} catch (Exception e) {
+			e.printStackTrace();
 			display(e.getMessage());  // do not fail on error
 		}
 	}

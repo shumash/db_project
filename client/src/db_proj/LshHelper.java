@@ -6,11 +6,11 @@ import java.util.ArrayList;
 import java.util.Scanner;
 
 public class LshHelper {
-	
+
 	double[][] projVectors = null;
 	int binSize = Constants.HASH_BIN_SIZE;
-	
-	
+
+
 	// File of format
 	// a0 a1 ... an b w
 	LshHelper() {
@@ -21,10 +21,10 @@ public class LshHelper {
 			throw new RuntimeException(e.getMessage());
 		}
 	}
-	
+
 	private void init(String projVectorsFile) throws FileNotFoundException {
 		ArrayList<String> lines = new ArrayList<String>();
-		
+
 		Scanner input = new Scanner(new File(projVectorsFile));
 		while (input.hasNextLine()) {
 			String line = input.nextLine();
@@ -34,7 +34,7 @@ public class LshHelper {
 			}
 		}
 		System.out.println("Reading " + lines.size() + " hash vectors");
-		
+
 		projVectors = new double[lines.size()][Constants.getPatchSize() * Constants.getPatchSize() * 3];
 		for (int i = 0; i < lines.size(); ++i) {
 			int col_num = 0;
@@ -46,11 +46,20 @@ public class LshHelper {
 		    assert col_num == Constants.getPatchSize() * Constants.getPatchSize() * 3;
 		}
 	}
-	
+
+	public int computeSingleIntegerHash(int[] hashes) {
+        int result = 0;
+        for(int i=0;i<hashes.length;i++) {
+            result <<= 3;
+            result += hashes[i];
+        }
+        return result;
+    }
+
 	public int[] getHashes(double[] imgVector, int numHashes) {
 		return getHashes(imgVector, numHashes, false);
 	}
-	
+
 	public int[] getHashes(double[] imgVector, int numHashes, boolean nextBin) {
 		if (numHashes > projVectors.length) {
 			throw new IllegalArgumentException("More hashes requested than projection vectors");
@@ -61,7 +70,7 @@ public class LshHelper {
 		}
 		return res;
 	}
-	
+
 	public static int computeHash(double[] hashVec, double[] imgVec, int binSize, boolean nextBin) {
 		double dot = 0;
 		for (int i = 0; i < imgVec.length; ++i) {
