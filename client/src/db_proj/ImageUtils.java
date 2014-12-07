@@ -116,15 +116,11 @@ public class ImageUtils {
     public static double computeNewDistance(double[] v1, double[] v2) {
         double dis = 0;
         assert v1.length == v2.length;
-        double [] dist = new double[3];
-        dist[0] = dist[1] = dist[2] = 0.0;
-        int elems = v1.length / 3;
+        int elems = v1.length;
         for (int i = 0; i < elems; ++i) {
-            for (int c = 0; c < 3; ++c) {
-                dis += Math.pow(v1[i * 3 + c] - v2[i * 3 + c], 2.0);
-            }
+                dis += Math.pow(v1[i] - v2[i], 2.0);
         }
-        return Math.sqrt(dis)/elems*elems;
+        return Math.sqrt(dis)/elems;
     }
 
 	public static Vector<Double> computeDistance(double[] v1, double[] v2) {
