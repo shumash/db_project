@@ -2,12 +2,16 @@ package db_proj;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
+
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.Random;
 import java.util.Vector;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * Encapsulates low-level image utilities, mostly as static methods.
@@ -37,6 +41,13 @@ public class ImageUtils {
 		img = ImageIO.read(new URL(url));
 		return img;
 	}
+
+    /**
+     * Writes image to file.
+     */
+    public static void saveImage(BufferedImage img, String file) throws IOException {
+        ImageIO.write(img, "jpg", new File(file));
+    }
 
 	/**
 	 * Creates a popup with an image.
@@ -109,11 +120,11 @@ public class ImageUtils {
 		return res;
 	}
 
-	public static Vector<Double> computeDistance(PatchWrapper pw1, PatchWrapper pw2) {
-		return computeDistance(pw1.getImgVector(), pw2.getImgVector());
+	public static Vector<Double> computeNormChannelDistanceSquared(PatchWrapper pw1, PatchWrapper pw2) {
+		return computeNormChannelDistanceSquared(pw1.getImgVector(), pw2.getImgVector());
 	}
 
-	public static Vector<Double> computeDistance(double[] v1, double[] v2) {
+	public static Vector<Double> computeNormChannelDistanceSquared(double[] v1, double[] v2) {
             assert v1.length == v2.length;
 		double [] dist = new double[3];
 		dist[0] = dist[1] = dist[2] = 0.0;
@@ -131,4 +142,54 @@ public class ImageUtils {
 		retVector.add(dist[2]);
 		return retVector;
 	}
+
+	public class ImgStats {
+		double[] mean = null;
+		double[] stdev = null;
+	}
+
+    public static BufferedImage scaleCrop(BufferedImage image) {
+    	// Step 1: crop
+    	int min_dim = Math.min(image.getHeight(), image.getWidth());
+    	BufferedImage cropped = image.getSubimage(0, 0, min_dim, min_dim);
+
+        BufferedImage newImage = new BufferedImage(Constants.getSmallSize(), Constants.getSmallSize(), image.getType());
+		Graphics g = newImage.createGraphics();
+		g.drawImage(cropped, 0, 0, Constants.getSmallSize(), Constants.getSmallSize(), null);
+		g.dispose();
+        return newImage;
+    }
+
+    public static void checkImageSizeValid(BufferedImage image, int pSize) {
+        int iw = image.getWidth();
+		if (iw % pSize != 0) {
+			throw new RuntimeException("patch size not a factor of image width");
+		}
+		int ih = image.getHeight();
+		if (ih % pSize != 0) {
+			throw new RuntimeException("patch size not a factor of image height");
+		}
+    }
+
+    public static List<BufferedImage> getSamplePatches(BufferedImage image, int pSize, Random rand) {
+        ImageUtils.checkImageSizeValid(image, pSize);
+		int horPatches = image.getWidth() / pSize;
+		int vertPatches = image.getHeight() / pSize;
+
+		// Get about every 100's patch
+        List<BufferedImage> res = new ArrayList<BufferedImage>(horPatches * vertPatches);
+		for (int i = 0; i < horPatches; i++){
+			for (int j = 0; j < vertPatches; j++) {
+				int randomNum = rand.nextInt(2500);
+				if (randomNum % 100 == 0) {
+					BufferedImage patch = image.getSubimage(i * pSize,
+							j * pSize,
+							pSize,
+							pSize);
+					res.add(patch);
+				}
+			}
+		}
+        return res;
+    }
 }

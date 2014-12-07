@@ -1,6 +1,7 @@
 package db_proj;
 
 import java.io.File;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Vector;
 
@@ -30,4 +31,11 @@ public class MiscUtils {
 		}
 		return retVal;
 	}
+
+    static public void dumpToFile(double[] v, PrintStream output) {
+        for (int i = 0; i < v.length; ++i) {
+            output.print(v[i] + " ");
+        }
+        output.print("\n");
+    }
 }

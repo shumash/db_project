@@ -82,14 +82,9 @@ public class DatabaseClient {
 	 * @return id of the stored image
 	 */
 	public int storeImage(BufferedImage image, String name) throws IOException, SQLException {
-        SimpleTimer.timedLog("Scaling image... ");
         SimpleTimer timer = new SimpleTimer();
-		BufferedImage newImage = new BufferedImage(Constants.getSmallSize(), Constants.getSmallSize(), image.getType());
-
-		Graphics g = newImage.createGraphics();
-		g.drawImage(image, 0, 0, Constants.getSmallSize(), Constants.getSmallSize(), null);
-		g.dispose();
-		image = newImage;
+        SimpleTimer.timedLog("Scaling image... ");
+        image = ImageUtils.scaleCrop(image);
         timer.printDone();
 
         timer.start();
@@ -97,10 +92,29 @@ public class DatabaseClient {
 		int imgId = insertImage(image, name == null ? "" : name);
         timer.printDone();
 
-		List<PointerData> patchInfo = patchify(image, Constants.getPatchSize(), imgId);
+		List<PointerData> patchInfo = patchify(image, Constants.getPatchSize(), imgId,
+                                               false /* not mock */);
 		storePointers(patchInfo, imgId);
 
         SimpleTimer.timedLog("Inserted image " + name + ", " + imgId + "\n");
+		return imgId;
+	}
+
+    /**
+     * Performs patch search and prints diagnostics, but does not affect the database.
+     */
+    public int mockStoreImage(BufferedImage image, String name) throws IOException, SQLException {
+        SimpleTimer timer = new SimpleTimer();
+        SimpleTimer.timedLog("Scaling image... ");
+        image = ImageUtils.scaleCrop(image);
+        timer.printDone();
+
+		int imgId = 0;  // not actually inserting image
+
+		List<PointerData> patchInfo = patchify(image, Constants.getPatchSize(), imgId,
+                                               true /* is mock */);
+
+        SimpleTimer.timedLog("Mock inserted image " + name + ", " + imgId + "\n");
 		return imgId;
 	}
 
@@ -317,19 +331,11 @@ public class DatabaseClient {
 	 * @throws SQLException
 	 * @throws IOException
 	 */
-	private List<PointerData> patchify(BufferedImage image, int pSize, int imgId) throws SQLException, IOException {
+	private List<PointerData> patchify(BufferedImage image, int pSize, int imgId, boolean mock) throws SQLException, IOException {
 		SimpleTimer timer = new SimpleTimer();
-
-		int iw = image.getWidth();
-		if (iw % pSize != 0) {
-			throw new RuntimeException("patch size not a factor of image width");
-		}
-		int ih = image.getHeight();
-		if (ih % pSize != 0) {
-			throw new RuntimeException("patch size not a factor of image height");
-		}
-
         SimpleTimer.timedLog("Creating patches and hashing them locally... ");
+
+        ImageUtils.checkImageSizeValid(image, pSize);
 		int horPatches = image.getWidth() / pSize;
 		int vertPatches = image.getHeight() / pSize;
         PatchDedup dedup = new PatchDedup();
@@ -345,6 +351,15 @@ public class DatabaseClient {
         timer.printDone();
 
         Set<Integer> hashes = dedup.getUniqueHashes();
+        SimpleTimer.timedLog("Hashes w/o self similarity: " + hashes.size() + "\n");
+
+        timer.start();
+        SimpleTimer.timedLog("Handling self-similarity... ");
+        dedup.handleSelfSimilarity();
+        hashes = dedup.getUniqueHashes();
+        timer.printDone();
+        SimpleTimer.timedLog("Hashes after self similarity: " + hashes.size() + "\n");
+
         Map<Integer, List<PatchWrapper> > existingPatches = getExistingPatches(hashes);
 
         timer.start();
@@ -352,11 +367,16 @@ public class DatabaseClient {
         dedup.processPossibleDbMatches(existingPatches);
         timer.printDone();
 
-        batchInsertPatches(dedup.patchesToStore(), imgId);
-        // Note: getPointerData must be called after storing patches, as that alters patchIDs
-        // with new values
-        List<PointerData> pdata = dedup.getPointerData();
-        return pdata;
+        if (!mock) {
+            batchInsertPatches(dedup.patchesToStore(), imgId);
+            // Note: getPointerData must be called after storing patches, as that alters patchIDs
+            // with new values
+            List<PointerData> pdata = dedup.getPointerData();
+            return pdata;
+        } else {
+            SimpleTimer.timedLog("WARNING: RUNNING MOCK PATCHIFY THAT DOES NOT AFFECT DB");
+            return new ArrayList<PointerData>();
+        }
 	}
 
     /**
