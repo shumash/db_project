@@ -16,11 +16,11 @@ public class Experimental {
 	 * @throws IOException 
 	 */
 	public static void main(String[] args) throws IOException {
-		String csvFile = "../data/manifest.txt";
+		String csvFile = "../data/manifest-sun2012.txt";
 		BufferedReader br = null;
 		String line = "";
 		String cvsSplitBy = "\t";
-		String prefix = "http://labelme.csail.mit.edu/Images";
+		String prefix = "http://people.csail.mit.edu/aespielberg/SUN2012/Images";
 
 		try {
 
