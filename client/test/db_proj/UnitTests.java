@@ -1,13 +1,14 @@
 package db_proj;
 
-import static org.junit.Assert.*;
+import org.junit.Test;
 
-import java.awt.Color;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class UnitTests {
 
@@ -40,5 +41,15 @@ public class UnitTests {
 		MiscUtils.listFilesForFolder(new File("../tiny_data"), paths);
 		System.out.println("Num files: " + paths.size());
 	}
+    @Test
+    public void testWritingIds() {
+        int size = 5;
+        int[] nums = new int[size];
+        for (int i = 0; i < size; i++) {
+            nums[i]=i;
+        }
+        MiscUtils.writeImageIdsToFile("test",nums);
+    }
+
 
 }

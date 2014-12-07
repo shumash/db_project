@@ -1,6 +1,5 @@
 package db_proj;
 
-import java.awt.image.BufferedImage;
 import java.util.*;
 
 /**

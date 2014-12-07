@@ -291,19 +291,23 @@ public class Client {
                 ArrayList<String> files = new ArrayList<String>();
                 MiscUtils.listFilesForFolder(new File(folder), files);
                 initDbClient();
+                int counter = 0;
+                int[] ids = new int[files.size()];
                 timer.start();
                 for (String filename : files) {
                     String full_file = folder + "/" + filename;
                     try {
                         img = loadImage("local", full_file);
-                        dbClient.storeImage(img, filename);
+                        ids[counter]= dbClient.storeImage(img, filename);
+                        counter +=1;
                     } catch (Exception e) {
                         System.out.println("Could not load/store file: " + full_file);
                         //                        throw e;
                     }
                 }
                 SimpleTimer.timedLog("Finished batch-upload of " + files.size() +
-                                     " files in " + timer.getMs() + " ms\n");
+                        " files in " + timer.getMs() + " ms\n");
+                MiscUtils.writeImageIdsToFile("batchShowIds",ids);
             } else if (in.command.equals("img-store")) {
 				initDbClient();
 				timer.start();
@@ -334,6 +338,7 @@ public class Client {
 			} else if (in.command.equals("random-sample")) {
 				initDbClient();
                 List<String> files = dbClient.randomSample(Integer.parseInt(in.getArg(0)));
+
                 for (String file : files) {
                     System.out.println("Fetching " + file);
                     img = loadImage("db", file);
