@@ -53,4 +53,5 @@ public class PatchWrapper {
     public boolean hasComputedHash() {
         return hashes != null;
     }
+
 }

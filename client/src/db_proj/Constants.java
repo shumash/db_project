@@ -9,6 +9,7 @@ public class Constants {
 	public static boolean ENABLE_BRUTE_NEAREST_NEIGHBOR = false;
     public static boolean BATCH_INSERT = false;
     public static boolean BATCH_RECONSTRUCT = false;
+    public static int RANDOM_SAMPLE = 10;
 
 	private Vector<Double> maxDistance;
 	private int patchSize = 10;
