@@ -6,7 +6,7 @@ be squares of the same size.
 We formally describe our method in Sec.~\ref{ssec:overview}. To summarize,
 we first segment each image into patches and store them in the \texttt{patches} table.
 Only patches sufficiently different
-from all the patches in \texttt{patches} are stored (See Sec.~\ref{ssec:sim}). (TODO: is this true?)
+from all the patches in \texttt{patches} are stored (See Sec.~\ref{ssec:sim}).
 %Instead of storing each image explicitly, we approximate it by storing pointers to the patches approximating its original patches. 
 In 
 Sec.~\ref{ssec:lsh}, we describe the
@@ -21,14 +21,14 @@ Our method is governed by the following parameters:
 \item $m$ - The width and height of all images.
 \item $n$ - The width and height of all patches\footnote{We assume that $m \mod n$ is $0$.}.
 \item $i$ - The number of images in our database.
-\item $S$ - A similarity function $S \colon \mathds{I}_{n \times n}  \to \mathds{N}$, where we define $\mathds{I}_{n \times n}$ to be the space of $n \times n$ images.  Section \ref{ssec:sim} details similarity measures.
-\item $T$ - A similarity threshold, $T \in \mathds{R}$.
+\item $S$ - A similarity function $S \colon \mathds{I}_{n \times n}  \to \mathds{N}$, where we define $\mathds{I}_{n \times n}$ to be the space of $n \times n$ images.  Section \ref{ssec:sim} details similarity measures.  The similarity function should be at least a distance pseudometric, so $S(Patch_1, Patch_2) = 0$ if and only if $Patch_1$ and $Patch_2$ are the same.
+\item $T$ - A similarity threshold, $T \in \mathds{R}$; used as a maximum value we allow on $S$ for patch mappings.
 
 \end{itemize}
 
-It is worth noting that we propose a lossy compression scheme.  For the remainder of the paper, when we use the term \emph{images} we are referring to entire images from our database.  When we use the term \emph{tiles} we are referring to small $n \times n$ contiguous portions of images in our database.  When we use the term \emph{patches}, we are specifically referring to tiles which we have chosen to store in our patch table and use for compression.  Here we present an overview of our compression method; in subsequent subsections we delve into the details.  
+It is worth noting that we propose a \emph{lossy} compression scheme.  For the remainder of the paper, when we use the term \emph{images} we are referring to entire images from our database.  When we use the term \emph{tiles} we are referring to small $n \times n$ contiguous portions of images in our database.  When we use the term \emph{patches}, we are specifically referring to tiles which we have chosen to store in our patch table and use for compression.  Here we present an overview of our compression method; in subsequent subsections we delve into the details.  
 
-We begin our compression algorithm by creating a table of image patches to serve as our patch dictionary.  These patches are chosen from randomly selected $n \times n$ pixel tiles from the entire image database.   During the compression step, we partition our images into $\frac{m}{n}^2$ non-overlapping tiles, with the intent of mapping each tile to a patch in our patch table.  Thus, rather  than store the entire tile, we simply store a pointer to an entry in our pre-computed patch table.  The patch we choose is the one which is closest to the original image in some similarity space $S$.  If the closest patch in our patch table is less than $T$ in similarity to the original image tile, we then store this tile as a new patch in our table and map the tile to itself.  Assuming that our initial patch dictionary is distributed relatively uniformly over our image database, adding additional patches should be a rare procedure (TODO: how often?).  Thus, the space savings come from only needing to store an effective pointer for each tile, rather than the entire tile data.  Note that the minimum threshold on the similarity of tiles and patches guarantees that each compressed image is at least $\frac{mT}{n}$ similar its original counterpart (TODO: is this true?).  This procedure is shown in algorithm \ref{insert_algorithm}.
+We begin our compression algorithm by creating a table of image patches to serve as our patch dictionary.  These patches are chosen from randomly selected $n \times n$ pixel tiles from the entire image database.   During the compression step, we partition each of our images into $\frac{m}{n}^2$ non-overlapping tiles, with the intent of mapping each tile $t_j$ to a patch in our patch table.  Thus, rather  than store the entire tile, we simply store a pointer to an entry in our pre-computed patch table.  The patch we choose is the one which is closest to the original image in some similarity space $S$, i.e. the patch $P_j$ such that $S(t_j, P_j)$ is minimized.  If the closest patch in our patch table is more than than $T$ away from the original image tile, we then store this tile as a new patch in our table and map the tile to itself.  Assuming that our initial patch dictionary is distributed relatively uniformly over our image database, adding additional patches should be a relative rare procedure.  We discuss how often these extra insertions are needed in \ref{ssec:growing_db} Thus, the space savings come from only needing to store an effective pointer for each tile, rather than the entire tile data.  Note that the maximum threshold on the similarity of tiles and patches guarantees that each compressed image is at most $\frac{mT}{n}$ away from its original counterpart in $S$.  This procedure is shown in algorithm \ref{insert_algorithm}.
 
 \begin{algorithm}
     \caption{Insert Image $I$ into database}
@@ -49,14 +49,14 @@ We begin our compression algorithm by creating a table of image patches to serve
 
 With a large table of patches, finding the closest patch can be computationally expensive.  In order to speed up the search, we employ \emph{locality sensitive hashing} (LSH).  Although this softens the constraint that we always find the closest patch in the database for each tile, the closest patch is still found with very high probability, and in expectation the selected patch is still very similar.  Section \ref{ssec:lsh} details this technique.
 
-Our compression problem formally can be stated as choosing a selection of tile to patch mappings which minimizes the storage space usage of our patch table, while constraining that each image tile is at least $T$ similar to its mapped patch.  In other words,
+Our compression problem formally can be stated as choosing a selection of tile to patch mappings which minimizes the storage space usage of our patch table, while constraining that each image tile is at most $T$ away from its mapped patch.  In other words,
 
 \begin{equation*}
 \begin{aligned}
 & \underset{P, M}{\text{minimize}}
 & & c_p(i, |P|, m, n) \\
 & \text{subject to}
-& & S(I_j, M(I_j)) \geq T, \; j = 1, \ldots, i.
+& & S(I_j, M(I_j)) \leq T, \; j = 1, \ldots, i.
 \end{aligned}
 \end{equation*}
 
@@ -95,15 +95,15 @@ being the simplest case.
 
 For the purpose of this project, we choose to use squared Euclidean
 distance over (CIE)LUV color space.
-Given two $n \times n$ patches $P_1$ and $P_2$, we evaluate similarity $S$
+Given two $n \times n$ tiles $t_1$ and $t_2$, we evaluate similarity $S$
 per color channel $i$ as follows:
 
 \begin{displaymath}
-S(P_1, P_2, i) = \frac{||P_1(i) - P_2(i)||^2}{n^2}
+S(t_1, t_2, i) = \frac{||t_1(i) - t_2(i)||^2}{n^2}
 \end{displaymath}
 where $||\cdot||$ denotes standard Euclidean norm.
 We normalize by the dimensionality of the space to allow us to keep the
-similarity threshold independent of the patch size. See section \ref{sec:simthresh} for more details.  A benefit of using a Euclidean distance metric is that it allows us to use LSH to retrieve patches that are likely to be similar.
+similarity threshold independent of the tile size. See section \ref{sec:simthresh} for more details.  A benefit of using a Euclidean distance metric is that it allows us to use LSH to retrieve patches that are likely to be similar.
 
 \subsection{LSH for Patches}\label{ssec:lsh}
 
@@ -116,7 +116,7 @@ We used $postgresql$ to construct our database, and used
 Java API to talk to the database from a custom executable. Locality
 sensitive hashing, image segmentation and reconstruction were
 all implemented in Java, and used to construct a hash table
-on patches in $postbresql$.
+on patches in $postgresql$.
 
 Our code is available at:
 \begin{verbatim}
