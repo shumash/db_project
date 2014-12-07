@@ -4,171 +4,214 @@ import java.awt.image.BufferedImage;
 import java.util.*;
 
 /**
- * User: Wei
+ * Author: Wei, Masha
  * Date: 12/3/2014
  * Time: 11:46 PM
+ *
  */
 public class PatchDedup {
-    private static class PatchInfo {
-        // The hash of the patch
-        public int hash;
+    public static class PatchInfo {
+        public int x = -1;
+        public int y = -1;
+        public PatchWrapper pwrapper = null;
+        Vector<Double> distance = null;
 
-        // Whether it is duplicated with another earlier patch in this image
-        public boolean duplicatedLocal;
-
-        // If it's duplicatedLocal, the index of the earlier duplicate patch
-        public int localSameAsIndex;
-
-        // Whether it's duplicated with another existing patch in the database.
-        public boolean duplicatedRemote;
-
-        // The patch ID we'll eventually decide to put in to the database
-        public int patchId;
-
-        public BufferedImage image;
-
-        private PatchInfo(int hash, BufferedImage image) {
-            this.hash = hash;
-            this.image = image;
+        public PatchInfo(PatchWrapper pw) {
+            pwrapper = pw;
+        }
+        public PatchInfo(PatchWrapper pw, int inX, int inY) {
+            pwrapper = pw;
+            x = inX;
+            y = inY;
         }
     }
 
-    PatchInfo[] patchInfos;
+    // Hashes
+    List<PatchInfo> patches = new ArrayList<PatchInfo>(Constants.getPatchesPerImage());
+    List<PatchWrapper> approximatingPatches = null;
 
-    LshHelper lshHelper = new LshHelper();
-    Map<Integer, List<Integer>> localHashes = new HashMap<Integer, List<Integer>>();
-    Map<Integer, BufferedImage> patchesToStore = new HashMap<Integer, BufferedImage>();
+    Map<Integer, Set<Integer> > localHashes = new HashMap<Integer, Set<Integer>>();
+    List<PatchWrapper> patchesToStore = new ArrayList<PatchWrapper>();
 
-    public PatchDedup(BufferedImage[] patches) {
-        System.out.print("Compressing patches locally for the same image... ");
-        patchInfos = new PatchInfo[patches.length];
-        for(int i=0;i<patches.length;i++) {
-            int hash = getHash(patches[i]);
-            patchInfos[i] = new PatchInfo(hash, patches[i]);
-            if (localHashes.containsKey(hash)) {
-                List<BufferedImage> similarImages = new ArrayList<BufferedImage>();
-                for(int j : localHashes.get(hash)) {
-                    similarImages.add(patches[j]);
-                }
-                int mostSimilarIndex = findMostSimilarPatch(patches[i], similarImages);
-                if (mostSimilarIndex != -1) {
-                    patchInfos[i].duplicatedLocal = true;
-                    patchInfos[i].localSameAsIndex = localHashes.get(hash).get(mostSimilarIndex);
-                }
-            }
-            if (!patchInfos[i].duplicatedLocal) {
-                if (!localHashes.containsKey(hash)) {
-                    localHashes.put(hash, new ArrayList<Integer>());
-                }
-                localHashes.get(hash).add(i);
-            }
+    public PatchDedup() {}
+
+    /**
+     * Adds a patch to the local patches.
+     */
+    public int processLocalPatch(PatchWrapper wrapper, int x, int y) {
+        int localId = patches.size();
+        patches.add(new PatchInfo(wrapper, x, y));
+
+        int hash = wrapper.getSingleHash();
+        if (!localHashes.containsKey(hash)) {
+            localHashes.put(hash, new HashSet<Integer>());
         }
-        System.out.println("done.");
-
+        localHashes.get(hash).add(localId);
+        return localId;
     }
 
-    public Set<Integer> getUniqueHashesForThisImage() {
+    public Set<Integer> getUniqueHashes() {
         return localHashes.keySet();
     }
 
-    /**
-     * @param remoteHashes map from hash to remote patch ID
-     * @param initPatchId The first ID that does not exist in the database.
-     */
-    public void setRemoteExistingHashes(PatchCache cache, Map<Integer, Map<Integer, BufferedImage>> remoteHashes, int initPatchId) {
-        System.out.print("Compressing patches against similar patches in the database... ");
-        for (PatchInfo patchInfo : patchInfos) {
-            if (remoteHashes.containsKey(patchInfo.hash)) {
-                List<Integer> indices = new ArrayList<Integer>();
-                List<BufferedImage> similarImages = new ArrayList<BufferedImage>();
-                for (Map.Entry<Integer, BufferedImage> entry : remoteHashes.get(patchInfo.hash).entrySet()) {
-                    indices.add(entry.getKey());
-                    similarImages.add(entry.getValue());
-                }
-                int mostSimilarIndex = findMostSimilarPatch(patchInfo.image, similarImages);
-                if (mostSimilarIndex != -1) {
-                    patchInfo.duplicatedRemote = true;
-                    patchInfo.patchId = indices.get(mostSimilarIndex);
-                }
-            }
-            if (!patchInfo.duplicatedRemote) {
-                if (!patchInfo.duplicatedLocal) {
-                    int patchId = initPatchId;
-                    patchInfo.patchId = patchId;
-                    patchesToStore.put(patchId, patchInfo.image);
-                    initPatchId++;
-
-                } else {
-                    patchInfo.patchId = patchInfos[patchInfo.localSameAsIndex].patchId;
-                }
-            }
-        }
-        System.out.println("done.");
-    }
-
-    public Map<Integer, BufferedImage> getPatchesToStore() {
+    public List<PatchWrapper> patchesToStore() {
         return patchesToStore;
     }
 
-    // List of patch IDs in the order of the patches
-    public int[] getPointersToStore() {
-        int[] result = new int[patchInfos.length];
-        for (int i=0;i<patchInfos.length;i++) {
-            result[i] = patchInfos[i].patchId;
+    /**
+     * Call after:
+     * - calling processLocalPatch on all new image patches
+     * - calling processPossibleDbMatches to compute patches to store
+     * - storing patchesToStore in DB
+     * to get information on patch pointers associated with all x,y positions
+     * in the image.
+     */
+    public List<PointerData> getPointerData() {
+        if (patches.size() != approximatingPatches.size()) {
+            throw new RuntimeException("Improper usage of PatchDedup");
         }
-        return result;
-    }
-
-    private int getHash(BufferedImage patch) {
-        double[] imgVector = ImageUtils.toLuv(ImageUtils.toRgbVector(patch));
-        int[] hashes = lshHelper.getHashes(imgVector, 10);
-        return computeSingleIntegerHash(hashes);
-    }
-
-
-    private int computeSingleIntegerHash(int[] hashes) {
-        int result = 0;
-        for(int i=0;i<hashes.length;i++) {
-            result <<= 3;
-            result += hashes[i];
+        List<PointerData> res = new ArrayList<PointerData>();
+        for (int i = 0; i < patches.size(); ++i) {
+            Integer patchId = approximatingPatches.get(i).getId();
+            assert patchId != null;
+            PatchInfo original = patches.get(i);
+            res.add(new PointerData(patchId, original.x, original.y));
         }
-        return result;
+        return res;
     }
 
-    public int findMostSimilarPatch(BufferedImage to, List<BufferedImage> images) {
-        int bestImageIndex = -1;
-        Vector<Double> approxBest = null;
-        for (int i=0;i<images.size();i++) {
-            Vector<Double> distance = ImageUtils.computeDistance(to, images.get(i));
-            if (approxBest == null || distanceLessThan(distance, approxBest)) {
-                approxBest = distance;
-                bestImageIndex = i;
+    /**
+     * Computes pathes to store, and patch pointers.
+     * @param dbPatches - for all getUniqueHashes() images in the Database;
+     *    i.e. map keyed by hash to all images in that bin
+     */
+    void processPossibleDbMatches(Map<Integer, List<PatchWrapper> > dbPatches) {
+        approximatingPatches = new ArrayList<PatchWrapper>(
+            Collections.nCopies(patches.size(), (PatchWrapper) null));
+
+        for (Map.Entry<Integer, Set<Integer> > entry : localHashes.entrySet()) {
+            Integer hash = entry.getKey();
+            List<PatchWrapper> existingPatches = dbPatches.get(hash);
+            List<PatchWrapper> existingLocalPatches = new ArrayList<PatchWrapper>();
+            for (Integer patchIndex : entry.getValue()) {
+                PatchInfo newPatch = patches.get(patchIndex);
+                PatchInfo closest = findMostSimilarPatch(existingLocalPatches, newPatch.pwrapper);
+                if (existingPatches != null) {
+                    closest = findMostSimilarPatch(existingPatches, newPatch.pwrapper, closest);
+                }
+                if (closest == null ||
+                    !MiscUtils.lessThan(closest.distance, Constants.getMaxDistance())) {
+                    // I.e. no match
+                    patchesToStore.add(newPatch.pwrapper);
+                    existingLocalPatches.add(newPatch.pwrapper);
+                    closest = newPatch;
+                }
+                approximatingPatches.set(patchIndex, closest.pwrapper);
             }
         }
-        if (lessThan(approxBest, Constants.getMaxDistance())) {
-            return bestImageIndex;
-        }
-        return -1;
     }
 
-    //assumes both vectors are of the same length
-    private boolean lessThan(Vector<Double> v1, Vector<Double> v2) {
-        boolean retVal = true;
-        for (int i = 0; i < v1.size(); i++){
-            retVal = retVal && v1.get(i) <= v2.get(i);
-        }
-        return retVal;
+    public PatchInfo findMostSimilarPatch(List<PatchWrapper> existingPatches, PatchWrapper patch) {
+        return findMostSimilarPatch(existingPatches, patch, null);
     }
 
-    private boolean distanceLessThan(Vector<Double> v1, Vector<Double> v2) {
-        return magnitude(v1) < magnitude(v2);
-    }
-
-    private double magnitude(Vector<Double> v) {
-        double sq = 0;
-        for (Double d : v) {
-            sq+=d*d;
-        }
-        return Math.sqrt(sq);
+    public PatchInfo findMostSimilarPatch(List<PatchWrapper> existingPatches, PatchWrapper patch, PatchInfo closest_so_far) {
+		PatchInfo approxBest = closest_so_far;
+		for (PatchWrapper candidate : existingPatches) {
+            PatchInfo sim = new PatchInfo(candidate);
+			sim.distance = ImageUtils.computeDistance(patch, candidate);
+			if (approxBest == null || MiscUtils.lessThan(sim.distance, approxBest.distance)) {
+				approxBest = sim;
+			}
+		}
+        return approxBest;
     }
 }
+
+
+    // /**
+    //  * @param remoteHashes map from hash to remote patch ID
+    //  * @param initPatchId The first ID that does not exist in the database.
+    //  */
+    // public void setRemoteExistingHashes(PatchCache cache, Map<Integer, Map<Integer, BufferedImage>> remoteHashes, int initPatchId) {
+    //     SimpleTimer timer = new SimpleTimer();
+    // 	System.out.print("Compressing patches against similar patches in the database... ");
+    //     for (PatchInfo patchInfo : patchInfos) {
+    //         if (remoteHashes.containsKey(patchInfo.hash)) {
+    //             List<Integer> indices = new ArrayList<Integer>();
+    //             List<BufferedImage> similarImages = new ArrayList<BufferedImage>();
+    //             for (Map.Entry<Integer, BufferedImage> entry : remoteHashes.get(patchInfo.hash).entrySet()) {
+    //                 indices.add(entry.getKey());
+    //                 similarImages.add(entry.getValue());
+    //             }
+    //             int mostSimilarIndex = findMostSimilarPatch(patchInfo.image, similarImages);
+    //             if (mostSimilarIndex != -1) {
+    //                 patchInfo.duplicatedRemote = true;
+    //                 patchInfo.patchId = indices.get(mostSimilarIndex);
+    //             }
+    //         }
+    //         if (!patchInfo.duplicatedRemote) {
+    //             if (!patchInfo.duplicatedLocal) {
+    //                 int patchId = initPatchId;
+    //                 patchInfo.patchId = patchId;
+    //                 patchesToStore.put(patchId, patchInfo.image);
+    //                 initPatchId++;
+
+    //             } else {
+    //                 patchInfo.patchId = patchInfos[patchInfo.localSameAsIndex].patchId;
+    //             }
+    //         }
+    //     }
+    //     System.out.println("done in " + timer.getMs() + "ms");
+    // }
+
+    // public Map<Integer, BufferedImage> getPatchesToStore() {
+    //     return patchesToStore;
+    // }
+
+    // // List of patch IDs in the order of the patches
+    // public int[] getPointersToStore() {
+    //     int[] result = new int[patchInfos.length];
+    //     for (int i=0;i<patchInfos.length;i++) {
+    //         result[i] = patchInfos[i].patchId;
+    //     }
+    //     return result;
+    // }
+
+    // public int findMostSimilarPatch(BufferedImage to, List<BufferedImage> images) {
+    //     int bestImageIndex = -1;
+    //     Vector<Double> approxBest = null;
+    //     for (int i=0;i<images.size();i++) {
+    //         Vector<Double> distance = ImageUtils.computeDistance(to, images.get(i));
+    //         if (approxBest == null || distanceLessThan(distance, approxBest)) {
+    //             approxBest = distance;
+    //             bestImageIndex = i;
+    //         }
+    //     }
+    //     if (lessThan(approxBest, Constants.getMaxDistance())) {
+    //         return bestImageIndex;
+    //     }
+    //     return -1;
+    // }
+
+    // //assumes both vectors are of the same length
+    // private boolean lessThan(Vector<Double> v1, Vector<Double> v2) {
+    //     boolean retVal = true;
+    //     for (int i = 0; i < v1.size(); i++){
+    //         retVal = retVal && v1.get(i) <= v2.get(i);
+    //     }
+    //     return retVal;
+    // }
+
+    // private boolean distanceLessThan(Vector<Double> v1, Vector<Double> v2) {
+    //     return magnitude(v1) < magnitude(v2);
+    // }
+
+    // private double magnitude(Vector<Double> v) {
+    //     double sq = 0;
+    //     for (Double d : v) {
+    //         sq+=d*d;
+    //     }
+    //     return Math.sqrt(sq);
+    // }
+//}

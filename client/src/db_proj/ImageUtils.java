@@ -13,7 +13,7 @@ import java.util.Vector;
  * Encapsulates low-level image utilities, mostly as static methods.
  */
 public class ImageUtils {
-	
+
 	/**
 	 * Loads image from filename.
 	 * @param filename
@@ -25,7 +25,7 @@ public class ImageUtils {
 		img = ImageIO.read(new File(filename));
 		return img;
 	}
-	
+
 	/**
 	 * Loads image from a url.
 	 * @param url fully specified url
@@ -37,7 +37,7 @@ public class ImageUtils {
 		img = ImageIO.read(new URL(url));
 		return img;
 	}
-	
+
 	/**
 	 * Creates a popup with an image.
 	 * Note: popup may be hidden by current window.
@@ -49,16 +49,16 @@ public class ImageUtils {
 	    ImageIcon icon = new ImageIcon(image);
 	    JLabel lbl = new JLabel(icon);
 	    f.getContentPane().add(lbl);
-	    f.setSize(icon.getIconWidth(), icon.getIconHeight()); 
-	    
+	    f.setSize(icon.getIconWidth(), icon.getIconHeight());
+
 	    // Position in the center
 	    Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 	    int x = (screenSize.width - f.getSize().width)/2;
 	    int y = (screenSize.height - f.getSize().height)/2;
 	    f.setLocation(x, y);
-	    
+
 	    f.setVisible(true);
-	    
+
 	    // TODO: make it pop up to the top
 	    //Timer t = new Timer(3000,new ActionListener(){
           //  @Override
@@ -69,17 +69,17 @@ public class ImageUtils {
                       //  f.toFront();
                         //f.repaint();
                     //}
-                //});             
-            //}   
+                //});
+            //}
         //});
         //t.setRepeats(false);
         //t.start();
 	}
-	
+
 	public static void saveImage(BufferedImage image, String format, String file) throws IOException {
 		ImageIO.write(image, format, new File(file));
 	}
-	
+
 	public static double[] toRgbVector(BufferedImage img) {
 		double [] res = new double[img.getWidth() * img.getHeight() * 3];
 		for (int x = 0; x < img.getWidth(); ++x) {
@@ -93,10 +93,10 @@ public class ImageUtils {
 		}
 		return res;
 	}
-	
+
 	public static double[] toLuv(double[] rgb) {
 		double [] res = new double[rgb.length];
-		
+
 		int elems = rgb.length / 3;
 		for (int i = 0; i < elems; ++i) {
 			int idx = i * 3;
@@ -108,16 +108,13 @@ public class ImageUtils {
 		}
 		return res;
 	}
-	
-	public static Vector<Double> computeDistance(BufferedImage imageA, BufferedImage imageB) {
-		double[] v1 = toLuv(toRgbVector(imageA));
-		double[] v2 = toLuv(toRgbVector(imageB));
-		assert v1.length == v2.length;
-		
-		return computeDistance(v1, v2);
+
+	public static Vector<Double> computeDistance(PatchWrapper pw1, PatchWrapper pw2) {
+		return computeDistance(pw1.getImgVector(), pw2.getImgVector());
 	}
-	
+
 	public static Vector<Double> computeDistance(double[] v1, double[] v2) {
+            assert v1.length == v2.length;
 		double [] dist = new double[3];
 		dist[0] = dist[1] = dist[2] = 0.0;
 		int elems = v1.length / 3;
@@ -126,7 +123,7 @@ public class ImageUtils {
 				dist[c] += Math.pow(v1[i * 3 + c] - v2[i * 3 + c], 2.0) / elems;
 			}
 		}
-		
+
 		//System.out.println("Distance = " + dist[0] + ", " + dist[1] + ", " + dist[2]);
 		Vector<Double> retVector = new Vector<Double>();
 		retVector.add(dist[0]);
