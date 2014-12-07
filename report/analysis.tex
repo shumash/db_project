@@ -1,6 +1,6 @@
 \section{Analysis}\label{sec:analysis}
 
-A number of parameters can be tweaked to change the patch matching and storage, and different choices may be appropriate for different applications and performance requirements (both quantitative and qualitative). These parameters include the size of the input images, the size and shape of the patches extracted, the extraction strategy (non-overlapping vs overlapping patches), the sampling strategy used to seed the dictionary, the similarity metric and thresholds used to compare patches, as well as the parameters required for indexing and retrieving patch matches (approximate nearest neighbors). Here we discuss some of the parameter choices made and the experiments that lead up to these choices. Other possible choices are discussed in Sec.\ref{sec:futureext}.
+A number of parameters can be tweaked to change the patch matching and storage, and different choices may be appropriate for different applications and performance requirements (both quantitative and qualitative). These parameters include the size of the input images, the size of the patches extracted, the sampling strategy used to seed the dictionary, the similarity metric and thresholds used to compare tiles, as well as the parameters required for indexing and retrieving patch matches (approximate nearest neighbors). Here we discuss some of the parameter choices made and the experiments that lead up to these choices. Other possible choices are discussed in Sec.\ref{sec:futureext}.
 
 Our quantitative performance metrics involve examining how the patch dictionary size grows with the addition of new images to the database (the growth function and rate) and the compression ratio per image (viewed as a distribution over compression ratios and summarized as the average compression ratio). Qualitative evaluations involve determining whether a human can spot compression artifacts and how salient they are in the images. The authors of this paper manually examined images reconstructed from the dictionary patches. A crowdsourced evaluation strategy involving Amazon's Mechanical Turk may be appropriate for larger-scale studies, but was beyond the scope of this paper.
 
@@ -36,13 +36,14 @@ There will always be a trade-off between compression benefits (storage - patch d
 
 TODO (written by Andy): I think this should be moved earlier, after which the analysis is added.  Maybe we should add some stuff on the "quality gains" and add a plot for that, but there's not much we can probably do until later.
 
-At larger patch granularities, each patch contains more image structure, and thus the probability that another patch contains the same or similar image content decreases with the number of pixels in a patch. At larger patch granularities it becomes increasingly harder to find matching patches in the patch dictionary, and the closest matching patches for textured regions might introduce artifacts (see fig.\ref{fig:patchsize}). At the same time, patches that are too small do not offer as efficient a compression strategy. We must balance the costs of storing pointers to patches for each image in our database, as well as all the patches themselves, against the costs of storing the images in their original form. This calculation is investigated further below. 
+At larger tile granularities, each tile contains more image structure, and thus the probability that another tile contains the same or similar image content decreases with the number of pixels in a patch. At larger granularities it becomes increasingly harder to find matching tiles in the patch dictionary, and the closest matching patches for textured regions might introduce artifacts (see fig.\ref{fig:patchsize}). At the same time, tiles that are too small do not offer as efficient a compression strategy. We must balance the costs of storing pointers to patches for each image in our database, as well as all the patches themselves, against the costs of storing the images in their original form. This calculation is investigated further below. 
 
 %In the extreme case, a patch is equal to one pixel, so the probability of an identical color patch is $\frac{1}{255^3}$, assuming 3 color channels. This value is multiplied by itself as many times as there are pixels in a patch to find an identical patch. For our application, we are interested in similar patches, rather than identical ones (see sec.\ref{sec:simthresh}), and so this probability is higher but bounded by this value, and similarly scales with patch size. 
 
 \subsubsection{Cost Evaluation}
+\label{sec:costeval}
 
-Assume for now that we choose to store $p$ patches in our auxiliary table.  In practice, we choose $p$ to be a function $p \colon Function \to \mathds{N}$ which maps from our similarity metric to a number of patches to store.  Assume also that each patch is square and composed of $n^2$ pixels, where $n$ is a user defined parameter.  We further assume that each pixel requires 3 bytes to store  and that each pointer is 8 bytes (a standard integer for a 64-bit system).  Under this "image only" scheme, in the case where we have $i$ images, the cost $c_i$ to store all the images in our database is:
+Assume for now that we choose to store $p$ patches in our auxiliary table.  In practice, we choose $p$ to be a function $p \colon S \to \mathds{N}$ which maps from our similarity metric to a number of patches to store.  Assume also that each patch is square and composed of $n^2$ pixels, where $n$ is a user defined parameter.  We further assume that each pixel requires 3 bytes to store  and that each pointer is 8 bytes (a standard integer for a 64-bit system).  Under this "image only" scheme, in the case where we have $i$ images, the cost $c_i$ to store all the images in our database is:
 
 \begin{equation}
 	c_i(i, m) = 3  i  m^2
@@ -54,7 +55,7 @@ In the case where we store pointers to patches, we have two tables: one table to
 	c_p(i, p, m, n) = 8 i (\frac{m}{n})^2 + 3  p  n^2
 \end{equation}.
 
-The first term is the cost of storing the pointer data, while the second term is the cost of storing the patch exemplars themselves.
+The first term is the cost of storing the pointer data, while the second term is the cost of storing the patch exemplars themselves.  The $"8"$ comes from the fact that we are dealing with very large image and patch tables ($ > 2 \times 10^9$ patches), and thus a \texttt{bigint} type is required to store the patch references.
 
 Given these two equations, for a fixed $m$ and $n$, we can easily see that our compressive scheme becomes more space-efficient when:
 
@@ -140,7 +141,7 @@ In the final column of fig. \ref{fig:perfGraphs}, we see a sample image reconstr
 \label{fig:perfGraphs}
 \end{figure*}
 
-\subsection{Growing the Database}
+\subsection{Growing the Database}\label{growing_db}
 
 In the preceding sections, we determined that for an image sized $500\times 500$, a $25\times 25$ patch size with a $T=0.8$ patch similarity threshold is appropriate since compression savings are properly balanced against artifacts introduced during image reconstruction. For further experiments, we scale down the image size to $100\times 100$ and the patch size to $5\times 5$, accordingly, maintaining the patch:image ratio. Note that the similarity threshold still applies as it is independent of patch size. The reduction in image size allows us to consider larger experiments on databases of image thumbnails. 
 
