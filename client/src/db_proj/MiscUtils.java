@@ -1,11 +1,8 @@
 package db_proj;
 
-import java.io.File;
-import java.io.PrintStream;
-import java.io.FileNotFoundException;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Vector;
 
 public class MiscUtils {
@@ -58,4 +55,41 @@ public class MiscUtils {
         fw.flush();
         fw.close();
     }
+
+    static public void writeQualityMetric(String fileName, double[] points){
+        PrintWriter fw= null;
+        try {
+            fw = new PrintWriter(fileName, "UTF-8");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+
+        int size = points.length;
+        for (int i = 0; i < size/2; i++) {
+            fw.println(points[2*i] + "," + points[2*i+1]);
+
+        }
+        fw.flush();
+        fw.close();
+    }
+
+    static public double getStd(List<Double> p){
+        double res = 0;
+        double mean = getMean(p);
+        for(double d: p){
+            res += Math.pow((d-mean),2);
+        }
+        return Math.sqrt(res/p.size());
+    }
+
+    static public double getMean(List<Double> p){
+        double sum = 0;
+        for(double d: p){
+            sum += d;
+        }
+        return sum/p.size();
+    }
+
 }
