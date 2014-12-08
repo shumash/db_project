@@ -7,8 +7,8 @@ We formally describe our method in Sec.~\ref{sec:overview}. To summarize,
 we first segment each image into patches and store them in the \texttt{patch\_dict} table, a dictionary of patches.
 Only patches sufficiently different
 from all the patches in \texttt{patch\_dict} are stored (See Sec.~\ref{sec:sim}).
-%Instead of storing each image explicitly, we approximate it by storing pointers to the patches approximating its original patches. 
-In 
+%Instead of storing each image explicitly, we approximate it by storing pointers to the patches approximating its original patches.
+In
 Sec.~\ref{sec:lsh}, we describe the
 search algorithm used to quickly retrieve similar patches, and in Sec.~\ref{sec:reconst}
 we detail the indices that make image reconstruction faster. Finally, in
@@ -27,9 +27,9 @@ Our method is governed by the following parameters:
 
 \end{itemize}
 
-It is worth noting that we propose a \emph{lossy} compression scheme ($T > 0$).  For the remainder of the paper, when we use the term \emph{images} we are referring to entire images from our database.  When we use the term \emph{image patches} we are referring to small $n \times n$ contiguous portions of images in our database.  When we use the term \emph{dictionary patches}, we are specifically referring to patches which we have chosen to store in our \texttt{patch\_dict} and use for compression.  Here we present an overview of our compression method; in subsequent subsections we delve into the details.  
+It is worth noting that we propose a \emph{lossy} compression scheme ($T > 0$).  For the remainder of the paper, when we use the term \emph{images} we are referring to entire images from our database.  When we use the term \emph{image patches} we are referring to small $n \times n$ contiguous portions of images in our database.  When we use the term \emph{dictionary patches}, we are specifically referring to patches which we have chosen to store in our \texttt{patch\_dict} and use for compression.  Here we present an overview of our compression method; in subsequent subsections we delve into the details.
 
-We begin our compression algorithm by seeding \texttt{patch\_dict} with an initial set of dictionary patches.  These patches are chosen from randomly selected $n \times n$ image patches from the entire image database (see sec. \ref{sec:sample} for a discussion of this seeding strategy).   During the image insertion step, we partition each of our images into $\left(\frac{m}{n}\right)^2$ non-overlapping patches, with the intent of mapping each image patch $P_j$ to a patch in \texttt{patch\_dict}.  Thus, rather than storing the original image patch for a given image, we simply store a pointer to a patch in \texttt{patch\_dict}.  The dictionary patch we choose is the one which is closest to the image patch according to some distance metric $S$, i.e. the patch $P_{NN}$ in \texttt{patch\_dict} such that $S(P_{NN}, P_j)$ is minimized.  If $S(P_{NN}, P_j) > T$, we then store $P_j$ as a new patch in \texttt{patch\_dict} and add a pointer to this dictionary patch from the image (at the corresponding $(x,y)$ location in the image).  Algorithm \ref{alg:insert} summarizes the image insertion procedure. Assuming that our patch dictionary is a good sample of the image patches in our image database, adding additional patches should be a relative rare procedure.  We discuss how often these extra insertions are needed in sec. \ref{sec:growing_db}. Thus, the space savings come from only needing to store an effective pointer for each image patch, rather than the entire patch data.  Note that the maximum threshold on the distance of image patches and dictionary patches guarantees that each compressed image is at most $\frac{mT}{n}$ away from its original counterpart in $S$.  
+We begin our compression algorithm by seeding \texttt{patch\_dict} with an initial set of dictionary patches.  These patches are chosen from randomly selected $n \times n$ image patches from the entire image database (see sec. \ref{sec:sample} for a discussion of this seeding strategy).   During the image insertion step, we partition each of our images into $\left(\frac{m}{n}\right)^2$ non-overlapping patches, with the intent of mapping each image patch $P_j$ to a patch in \texttt{patch\_dict}.  Thus, rather than storing the original image patch for a given image, we simply store a pointer to a patch in \texttt{patch\_dict}.  The dictionary patch we choose is the one which is closest to the image patch according to some distance metric $S$, i.e. the patch $P_{NN}$ in \texttt{patch\_dict} such that $S(P_{NN}, P_j)$ is minimized.  If $S(P_{NN}, P_j) > T$, we then store $P_j$ as a new patch in \texttt{patch\_dict} and add a pointer to this dictionary patch from the image (at the corresponding $(x,y)$ location in the image).  Algorithm \ref{alg:insert} summarizes the image insertion procedure. Assuming that our patch dictionary is a good sample of the image patches in our image database, adding additional patches should be a relative rare procedure.  We discuss how often these extra insertions are needed in sec. \ref{sec:growing_db}. Thus, the space savings come from only needing to store an effective pointer for each image patch, rather than the entire patch data.  Note that the maximum threshold on the distance of image patches and dictionary patches guarantees that each compressed image is at most $\frac{mT}{n}$ away from its original counterpart in $S$.
 
 \begin{algorithm}
     \caption{Insert Image $I$ into database}
@@ -47,7 +47,7 @@ We begin our compression algorithm by seeding \texttt{patch\_dict} with an initi
 \end{algorithmic}
 \end{algorithm}
 
-With a large table of patches, finding the closest patch can be computationally expensive.  In order to speed up the search, we employ \emph{locality sensitive hashing} (LSH).  Although this softens the constraint that we always find the closest dictionary patch in \texttt{patch\_dict} for each image patch, the closest patch is still found with very high probability, and in expectation the selected patch is still very similar.  Section \ref{sec:lsh} details this technique. We will define $M \colon \mathds{I}_{n \times n}  \to \mathds{I}_{n \times n}$ as our surjective mapping from image patches to dictionary patches that returns the approximately nearest neighbor ($P_{ANN}  \sim P_{NN}$) dictionary patch for each image patch $P_j$. Thus, the updated algorithm becomes: 
+With a large table of patches, finding the closest patch can be computationally expensive.  In order to speed up the search, we employ \emph{locality sensitive hashing} (LSH).  Although this softens the constraint that we always find the closest dictionary patch in \texttt{patch\_dict} for each image patch, the closest patch is still found with very high probability, and in expectation the selected patch is still very similar.  Section \ref{sec:lsh} details this technique. We will define $M \colon \mathds{I}_{n \times n}  \to \mathds{I}_{n \times n}$ as our surjective mapping from image patches to dictionary patches that returns the approximately nearest neighbor ($P_{ANN}  \sim P_{NN}$) dictionary patch for each image patch $P_j$. Thus, the updated algorithm becomes:
 
 \begin{algorithm}
     \caption{Modification of alg.~\ref{alg:insert}, with ANN}
@@ -78,33 +78,10 @@ Thus, our compression problem can formally be stated as choosing a selection of 
 
 where $c(\cdot, \cdot, \cdot, \cdot)$ is a cost function as defined in section \ref{sec:costeval}, $d$ is the number of patches in the dictionary (i.e. $d = |patch\_dict|$), and $k,m,n$ are as defined in \ref{sec:overview}.
 
-Given our pointer representation, we are able to construct the compressed image quite efficiently.  Given an image identifier, we iterate over all patch pointers stored with it, associated with each image location $(x,y)$.  
+Given our pointer representation, we are able to construct the compressed image quite efficiently.  Given an image identifier, we iterate over all patch pointers stored with it, associated with each image location $(x,y)$.
 \begin{edit}
 Is LSH used here?
 \end{edit}
-
-
-The $n \times n$ patches are stored as byte data in the \texttt{patch\_dict} table.
-We store the patch pointers for
-each image in the \texttt{patch\_pointers} table. The full schema looks as follows: 
-\begin{edit}
-update this and the schema in the poster accordingly
-\end{edit}
-\begin{verbatim}
-patch_dict(id int PRIMARY KEY,
-        patch bytea);
-
-images(id int PRIMARY KEY);
-
-patch_pointers(img_id int REFERENCES images(id),
-               patch_id int REFERENCES patches(id),
-               x int,
-               y int);
-\end{verbatim}
-where \texttt{patch\_pointers.x} and \texttt{patch\_pointers.y}
-refer to the left top corner location of each patch in the image.
-
-%In order to reconstruct an image from that patches, we run the following procedure:
 
 \subsection{Patch Distance Metric}\label{sec:sim}
 There are many image similarity/distance metrics that have been developed for
@@ -125,17 +102,6 @@ where $||\cdot||$ denotes standard Euclidean norm.
 We normalize by the dimensionality of the space to allow us to keep the
 distance threshold independent of the patch size. See section \ref{sec:simthresh} for more details.  A benefit of using a Euclidean distance metric is that it allows us to use LSH to retrieve patches that are likely to be similar.
 
-\subsection{LSH for Patches}\label{sec:lsh}
-\begin{edit}
-Add stuff here
-\end{edit}
-
-\subsection{Image Reconstruction}\label{sec:reconst}
-
-In order to reconstruct images quickly, we
-\begin{edit}
-complete this section
-\end{edit}
 
 \subsection{Implementation}\label{sec:impl}
 We used $postgresql$ to construct our database, and used
@@ -149,32 +115,36 @@ Our code is available at:
 https://github.com/shumash/db_project
 \end{verbatim}
 
+
+The $n \times n$ patches are stored as byte data in the \texttt{patch\_dict} table.
+We store the patch pointers for
+each image in the \texttt{patch\_pointers} table. The full schema looks as follows:
 \begin{edit}
-complete this section
+update this and the schema in the poster accordingly
 \end{edit}
+\begin{verbatim}
+patch_dict(id int PRIMARY KEY,
+           patch bytea);
 
-\subsection{Performance Optimization}
+images(id int PRIMARY KEY);
 
-We optimized our system to decrease database queries. In algorithm \ref{alg:insert}, for each image $I$ to insert, we have $\left(\frac{m}{n}\right)^2$ queries into the database to figure out whether there are patches that are similar to each of image's patches. Depending on whether there are similar patches in the database, we also make a query to insert a patch. This means for a single image insertion, we make $2\left(\frac{m}{n}\right)^2$ queries into the database (i.e. 2 queries per patch). This decreases the performance of our system. To solve this problem, we devised the following modified algorithm:
+patch_pointers(img_id int REFERENCES images(id),
+               patch_id int REFERENCES patches(id),
+               x int,
+               y int);
 
-\begin{algorithm}
-    \caption{Optimization of alg.~\ref{alg:insert2}, with ANN}
-    \label{alg:optimized}
-\begin{algorithmic}[1]
-\State $Patches \leftarrow $ \texttt{Patchify}($I,n$)
-\State $UniquePatches \leftarrow$ \texttt{FindUniquePatches}($I$)
-\State $PatchesToStoreInDB \leftarrow []$
-\For{$P_j$ in $UniquePatches$}
-\State $SimPat \leftarrow $\texttt{FindLikelySimilarPatches}($P_j,patch\_dict$)
-\State $P_{ANN} \leftarrow M(P_j)$
-\If {$S(P_{ANN}, P_j) > T$}
-\State {$PatchesToStoreInDB$.Add($P_j$)}
-\EndIf
-\EndFor
-\State {\texttt{BatchInsert($PatchesToStoreInDB$)}}
-\vspace{3mm}
-\end{algorithmic}
-\end{algorithm}
+patch_hashes(patch_id int PRIMARY KEY REFERENCES patches(id),
+             hash int);
+\end{verbatim}
+where \texttt{patch\_pointers.x} and \texttt{patch\_pointers.y}
+refer to the left top corner location of each patch in the image.
 
-This batch insert ensures that for a single image, we at most query the database twice, once for finding all the likely similar patches in the database, and once to batch insert all the patches into the database. This reduces the queries made to the database by $\left(\frac{m}{n}\right)^2$ which is a significant improvement. 
-The idea of this algorithm is to do a local filtering among the patches of a single image before we query the database, such that the set of patches will only contain patches that are already greater than $T$ distance away from each other.  Let's call the filtered set the \emph{unique patches}. Then we query the database to find the set of likely to be similar patches to each of the unique patches. Only if none of the likely-to-be similar patches in the database matches a patch from the unique patches, do we insert this patch. 
+%In order to reconstruct an image from that patches, we run the following procedure:
+
+\subsection{Image Reconstruction}\label{sec:reconst}
+
+In order to reconstruct images quickly, we
+\begin{edit}
+complete this section\\
+Ask wei for sample sql queries and pseudocode
+\end{edit}

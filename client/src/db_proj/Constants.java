@@ -8,6 +8,7 @@ public class Constants {
     public static boolean BATCH_INSERT = false;
     public static boolean BATCH_RECONSTRUCT = false;
     public static int RANDOM_SAMPLE = 10;
+    public static boolean USE_PCA_HASH = false;
 
 	private Vector<Double> maxDistance;
 	private int patchSize = 25;
@@ -86,7 +87,11 @@ public class Constants {
 
 	private LshHelper getInitLshHelper() {
 		if (lshHelper_ == null) {
-			lshHelper_ = new NaiveLshHelper();
+            if (!USE_PCA_HASH) {
+                lshHelper_ = new NaiveLshHelper(Constants.getNaiveHashVectorsFile());
+            } else {
+                lshHelper_ = new PcaLshHelper(Constants.getPcaHashVectorsFile(), true);
+            }
 		}
 		return lshHelper_;
 	}

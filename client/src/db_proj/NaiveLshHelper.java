@@ -10,9 +10,9 @@ public class NaiveLshHelper extends LshHelper{
 
 	// File of format
 	// a0 a1 ... an b w
-	NaiveLshHelper() {
+	NaiveLshHelper(String vectorFile) {
 		try {
-			initProjVectors(Constants.getNaiveHashVectorsFile(),
+			initProjVectors(vectorFile,
                             Constants.getPatchSize() * Constants.getPatchSize() * 3);
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();

@@ -24,7 +24,7 @@ public class Experimental {
 		dbc.connect(info);
 		return dbc;
 	}
-	
+
 
 
 	/**
@@ -64,6 +64,32 @@ public class Experimental {
         scaled = ImageUtils.scaleCrop(img);
         ImageUtils.saveImage(scaled, "/tmp/scaled_tiny.jpg");
     }
+
+    // public static void ComputeDotProductDistributions() {
+    //     String folder = "../../../imgdata/IMG/pca_dev";
+    //     String outFile = "/tmp/dot_distr";
+
+    //     NaiveLshHelper helper = new NaiveLshHelper("../data/pca_vec_only");
+    //     Random rand = new Random();
+
+    //     ArrayList<String> files = new ArrayList<String>();
+    //     MiscUtils.listFilesForFolder(new File(folder), files);
+    //     int count = 0;
+    //     for (String filename : files) {
+    //         String full_file = folder + "/" + filename;
+    //         System.out.println(count + " - Reading file: " + full_file);
+    //         BufferedImage img = ImageUtils.scaleCrop(ImageUtils.loadImage(full_file));
+    //         List<BufferedImage> patches = ImageUtils.getSamplePatches(img, Constants.getPatchSize(), rand);
+    //         for (BufferedImage patch_img : patches) {
+
+    //             PatchWrapper pwrapper = new PatchWrapper(patch_img);
+    //             MiscUtils.dumpToFile(pwrapper.getImgVector(), output);
+    //             output.flush();
+    //         }
+    //         ++count;
+    //     }
+
+    // }
 
     public static void DumpPatchVectorsToFile() throws IOException {
         String folder = "../../../imgdata/IMG/pca_train";
