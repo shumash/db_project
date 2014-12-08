@@ -35,7 +35,7 @@ We begin our compression algorithm by seeding \texttt{patch\_dict} with an initi
     \caption{Insert Image $I$ into database}
     \label{alg:insert}
 \begin{algorithmic}[1]
-\State $Patches \leftarrow $ \texttt{Patchify}(I, patch\_size=$n$)
+\State $Patches \leftarrow $ \texttt{Patchify}($I,n$)
 \For{$P_j$ in $Patches$}
 \State $SimPat \leftarrow $\texttt{FindLikelySimilarPatches}($P_j,patch\_dict$)
 \State $P_{NN} \leftarrow $ $argmin_{P_i \in SimPat} \{ S(P_i, P_j) \}$
@@ -95,24 +95,6 @@ refer to the left top corner location of each patch in the image.
 
 %In order to reconstruct an image from that patches, we run the following procedure:
 
-\subsection{}
-
-We optimized our system for its performance. In the original algorithm designed, for each image I to insert, we have (m/n)^2 queries into the database to figure out whether there are patches that are similar to each of image Iís patches. Depends on whether there are similar patches in the database, we also send a query to insert a patch for tiles in the image. This means for a single image insertion, we have 2*(m/n)^2 queries into the database. This decreases the performance of our system. To solve this problem, we devised the following modified algorithm.
-
-Algorithm for batch insert for a single image I
-Patches <- CutIntoPatches(I,patch_sizes=n)
-UniquePatchesWithinSingleImage <- FindUniquePatches(I)
-SimilarPatchesInDB <- GetLikelySimilarPatches(UniquePatchesWithinSingleImage)
-PatchesToStoreToDB = []
-for P_i, P_j in SimilarPatches, UniquePatchesWithinSingleImage do:
-     if S(P_i,P_j) > T
-        PatchesToStoreToDB.Add(P_j)
-BatchInsert(PatchesToStoreToDB)
-
-This batch insert ensure that for a single image, we at most query the database twice, once for finding all the likely similar patches in the database, once to batch insert all the patches into the database. This improves the performance of our system by a scale of (m/n)^2 which is a significant improvement. 
-The idea of this algorithm is that to do a local filtering among the patches of a single image before we query the database, such that the set of patches will only contains patches that are already greater than T distance away from each other.  Letís call the filtered set the unique set. Then we query the database to find the set of likely to be similar patches to each of the patches in the unique set we found locally for this image. Only if none of the likely-to-be similar patches in the database matches a patch in the unique set, we would later insert this patch. 
-
-
 \subsection{Patch Distance Metric}\label{sec:sim}
 There are many image similarity metrics that have been developed for
 images (see~\cite{yasmin2013use} for a good survey), and
@@ -159,3 +141,68 @@ https://github.com/shumash/db_project
 \begin{edit}
 complete this section
 \end{edit}
+
+\subsection{Performance Optimization}
+
+We optimized our system for its performance. In the original algorithm \ref{alg:insert}, for each image $I$ to insert, we have $\left(\frac{m}{n}\right)^2$ queries into the database to figure out whether there are patches that are similar to each of image's patches. Depending on whether there are similar patches in the database, we also make a query to insert a patch. This means for a single image insertion, we have $2\left(\frac{m}{n}\right)^2$ queries into the database (i.e. 2 queries per patch). This decreases the performance of our system. To solve this problem, we devised the following modified algorithm.
+
+\begin{edit}
+\begin{algorithm}
+    \caption{This is the original algorithm (for reference)}
+    \label{alg:insert}
+\begin{algorithmic}[1]
+\State $Patches \leftarrow $ \texttt{Patchify}($I,n$)
+\For{$P_j$ in $Patches$}
+\State $SimPat \leftarrow $\texttt{FindLikelySimilarPatches}($P_j,patch\_dict$)
+\State $P_{NN} \leftarrow $ $argmin_{P_i \in SimPat} \{ S(P_i, P_j) \}$
+\If {$S(P_{NN}, P_j) > T$}
+\State {\texttt{insert} $P_j$ into \texttt{patches}}
+\EndIf
+\EndFor
+\vspace{3mm}
+\end{algorithmic}
+\label{insert_algorithm}
+\end{algorithm}
+\end{edit}
+
+\begin{algorithm}
+    \caption{This is how Wei wrote the optimized algorithm}
+    \label{alg:insert}
+\begin{algorithmic}[1]
+\State $Patches \leftarrow $ \texttt{Patchify}($I, n$)
+\State $UniquePatches \leftarrow$ \texttt{FindUniquePatches}($I$)
+\State $SimPatches \leftarrow$ \texttt{FindLikelySimilarPatches}($UniquePatches$)
+\State $PatchesToStoreInDB \leftarrow []$
+\For{$P_i, P_j$ in $SimPatches, UniquePatches$}
+\If {$S(P_i,P_j) > T$}
+\State {$PatchesToStoreInDB$.Add($P_j$)}
+\EndIf
+\EndFor
+\State {\texttt{BatchInsert($PatchesToStoreInDB$)}}
+\vspace{3mm}
+\end{algorithmic}
+\label{opt_algorithm}
+\end{algorithm}
+
+\begin{algorithm}
+    \caption{This is my rewriting to match the original algorithm}
+    \label{alg:insert}
+\begin{algorithmic}[1]
+\State $Patches \leftarrow $ \texttt{Patchify}($I, n$)
+\State $UniquePatches \leftarrow$ \texttt{FindUniquePatches}($I$)
+\State $PatchesToStoreInDB \leftarrow []$
+\For{$P_j$ in $UniquePatches$}
+\State $SimPat \leftarrow $\texttt{FindLikelySimilarPatches}($P_j,patch\_dict$)
+\State $P_{NN} \leftarrow $ $argmin_{P_i \in SimPat} \{ S(P_i, P_j) \}$
+\If {$S(P_{NN}, P_j) > T$}
+\State {$PatchesToStoreInDB$.Add($P_j$)}
+\EndIf
+\EndFor
+\State {\texttt{BatchInsert($PatchesToStoreInDB$)}}
+\vspace{3mm}
+\end{algorithmic}
+\label{opt_algorithm}
+\end{algorithm}
+
+This batch insert ensures that for a single image, we at most query the database twice, once for finding all the likely similar patches in the database, and once to batch insert all the patches into the database. This improves the performance of our system by a scale of $\left(\frac{m}{n}\right)^2$ which is a significant improvement. 
+The idea of this algorithm is that to do a local filtering among the patches of a single image before we query the database, such that the set of patches will only contains patches that are already greater than $T$ distance away from each other.  Let's call the filtered set the \emph{unique patches}. Then we query the database to find the set of likely to be similar patches to each of the unique patches. Only if none of the likely-to-be similar patches in the database matches a patch from the unique patches, do we insert this patch. 
