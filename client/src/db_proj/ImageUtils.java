@@ -127,15 +127,11 @@ public class ImageUtils {
     public static double computeNewDistance(double[] v1, double[] v2) {
         double dis = 0;
         assert v1.length == v2.length;
-        double [] dist = new double[3];
-        dist[0] = dist[1] = dist[2] = 0.0;
-        int elems = v1.length / 3;
+        int elems = v1.length;
         for (int i = 0; i < elems; ++i) {
-            for (int c = 0; c < 3; ++c) {
-                dis += Math.pow(v1[i * 3 + c] - v2[i * 3 + c], 2.0);
-            }
+                dis += Math.pow(v1[i] - v2[i], 2.0);
         }
-        return Math.sqrt(dis)/elems*elems;
+        return Math.sqrt(dis)/elems;
     }
 
 
@@ -192,12 +188,12 @@ public class ImageUtils {
 		int horPatches = image.getWidth() / pSize;
 		int vertPatches = image.getHeight() / pSize;
 
-		// Get about every 100's patch
+		// Get about every 5th patch
         List<BufferedImage> res = new ArrayList<BufferedImage>(horPatches * vertPatches);
 		for (int i = 0; i < horPatches; i++){
 			for (int j = 0; j < vertPatches; j++) {
-				int randomNum = rand.nextInt(2500);
-				if (randomNum % 100 == 0) {
+				int randomNum = rand.nextInt(1000);
+				if (randomNum % 5 == 0) {
 					BufferedImage patch = image.getSubimage(i * pSize,
 							j * pSize,
 							pSize,

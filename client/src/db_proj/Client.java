@@ -4,9 +4,7 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.ConnectException;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
  * Front-end client / interpreter that interacts with the
@@ -198,7 +196,9 @@ public class Client {
 		if (args.numArgs() == 0) {
 			if (args.command.equals("db")){
 				res.setUrl("vise3.csail.mit.edu", "5432", "zoya");
-			} else {
+			} else if (args.command.equals("wei")) {
+                res.setUrl("localhost", "5432", "zoya");
+            }  else {
 				res.setLocalUrl(args.command);
 			}
 		} else {
@@ -276,6 +276,7 @@ public class Client {
 		display("run-script [script location] - runs commands in the text file");
 		display("get-quality [number] - get the quality of image reconstruction by random-sampling");
 		display("seed-sun - seed the sun database");
+        display("test-quality - for plotting quality metics ");
 		display("-----------------");
 	}
 
@@ -444,26 +445,60 @@ public class Client {
 				timer.start();
 				List<String> imageFiles = dbClient.randomSample(Integer.parseInt(in.getArg(0)));
 				System.out.println("getting summs " + imageFiles.size()/2 );
-				double sum = 0;
-				int skipped = 0;
-				//List<Integer> imgIds = new ArrayList<Integer>();
+                List<Double> qualities = new ArrayList<Double>();
 				for (int i = 0; i < imageFiles.size() / 2; i++) {
 					int id = Integer.parseInt(imageFiles.get(i*2+1));
 					System.out.println("ids: " + id);
 					BufferedImage original = dbClient.getImage(id);
 					BufferedImage reconstructed = dbClient.getImageReconstructed(id);
-					if (reconstructed == null) {
-						skipped +=1;
-					}else{
-						sum += ImageUtils.computeNewDistance(ImageUtils.getImgVector(original), ImageUtils.getImgVector(reconstructed));
+					if (reconstructed != null) {
+						double dist = ImageUtils.computeNewDistance(ImageUtils.getImgVector(original), ImageUtils.getImgVector(reconstructed));
+                        qualities.add(dist);
 					}
 
 				}
+                Collections.sort(qualities);
+                System.out.println("best quality from sampled image is " +qualities.get(0));
+                System.out.println("worst quality from sampled image is " + qualities.get(qualities.size()-1));
+                System.out.println("median quality from sampled image is " + qualities.get(qualities.size()/2));
+				System.out.println("average quality of sampled images is " + MiscUtils.getMean(qualities));
+				System.out.println("standard deviation of quality is " + MiscUtils.getStd(qualities));
 
-				System.out.println("average quality of database is " + sum/(Integer.parseInt(in.getArg(0))-skipped));
+
 				System.out.println("Finished getting quality in " + timer.getMs() + " ms");
 
-			}
+			}else if(in.command.equals("test-quality")){
+                initDbClient();
+                timer.start();
+                int[] testingSamplingNumbers = {10,20,30,40};
+                double [] points = new double[2*testingSamplingNumbers.length];
+                for(int i=0; i < testingSamplingNumbers.length; i++){
+                    int num = testingSamplingNumbers[i];
+                    List<String> imageFiles = dbClient.randomSample(num);
+                    System.out.println("getting sum " + imageFiles.size()/2 );
+                    double sum = 0;
+                    int skipped = 0;
+                    //List<Integer> imgIds = new ArrayList<Integer>();
+                    for (int j = 0; j < imageFiles.size() / 2; j++) {
+                        int id = Integer.parseInt(imageFiles.get(j*2+1));
+                        System.out.println("ids: " + id);
+                        BufferedImage original = dbClient.getImage(id);
+                        BufferedImage reconstructed = dbClient.getImageReconstructed(id);
+                        if (reconstructed == null) {
+                            skipped +=1;
+                        }else{
+                            sum += ImageUtils.computeNewDistance(ImageUtils.getImgVector(original), ImageUtils.getImgVector(reconstructed));
+                        }
+
+                    }
+                    points[2*i]=num;
+                    points[2*i+1] = sum/(num-skipped);
+                    //MiscUtils.writeQualityMetric(sum,num-skipped);
+                }
+                MiscUtils.writeQualityMetric("testingQulaity", points);
+                System.out.println("Finished testing quality in " + timer.getMs() + " ms");
+
+            }
 			else {
 				display("Error: unknown command");
 			}
