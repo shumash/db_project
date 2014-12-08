@@ -277,6 +277,7 @@ public class Client {
 		display("get-quality [number] - get the quality of image reconstruction by random-sampling");
 		display("seed-sun - seed the sun database");
         display("test-quality - for plotting quality metics ");
+        display("batch-reconstruct [number] - batch reconstruct number of images from db and show the results");
 		display("-----------------");
 	}
 
@@ -466,7 +467,25 @@ public class Client {
 
 				System.out.println("Finished getting quality in " + timer.getMs() + " ms");
 
-			}else if(in.command.equals("test-quality")){
+			}else if(in.command.equals("batch-reconstruct")){
+                initDbClient();
+                timer.start();
+                List<String> imageFiles = dbClient.randomSample(Integer.parseInt(in.getArg(0)));
+                System.out.println("getting summs " + imageFiles.size()/2 );
+                int[] ids = new int[imageFiles.size()/2];
+                for (int i = 0; i < imageFiles.size() / 2; i++) {
+                    int id = Integer.parseInt(imageFiles.get(i*2+1));
+                    System.out.println("ids: " + id);
+                    BufferedImage original = dbClient.getImage(id);
+                    BufferedImage reconstructed = dbClient.getImageReconstructed(id);
+                    if(reconstructed!=null){
+                        ids[i] = id;
+                    }
+                }
+                MiscUtils.writeImageIdsToFile("batchConstructIds", ids);
+
+            }
+            else if(in.command.equals("test-quality")){
                 initDbClient();
                 timer.start();
                 int[] testingSamplingNumbers = {10,20,30,40};
