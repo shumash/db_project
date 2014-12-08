@@ -22,14 +22,14 @@ Our method is governed by the following parameters:
 \item $m$ - The width and height of all images.
 \item $n$ - The width and height of all patches\footnote{We assume that $m \mod n$ is $0$.}.
 \item $k$ - The number of images in our database.
-\item $S$ - A similarity function $S \colon \mathds{I}_{n \times n} \times \mathds{I}_{n \times n} \to \mathds{N}$, where we define $\mathds{I}_{n \times n}$ to be the space of all $n \times n$ image patches.  Section \ref{sec:sim} details similarity measures.  The similarity function should be at least a distance pseudometric, so $S(Patch_1, Patch_2) = 0$ if and only if $Patch_1$ and $Patch_2$ are the same.
-\item $T$ - A similarity threshold, $T \in \mathds{R}$; used as a maximum value we allow on $S$ for patch mappings.
+\item $S$ - A distance function $S \colon \mathds{I}_{n \times n} \times \mathds{I}_{n \times n} \to \mathds{N}$, where we define $\mathds{I}_{n \times n}$ to be the space of all $n \times n$ image patches.  Section \ref{sec:sim} details distance measures.  The distance function should be at least a pseudometric, so $S(Patch_1, Patch_2) = 0$ if and only if $Patch_1$ and $Patch_2$ are the same.
+\item $T$ - A distance threshold, $T \in \mathds{R}$; used as a maximum value we allow on $S$ for patch mappings.
 
 \end{itemize}
 
 It is worth noting that we propose a \emph{lossy} compression scheme ($T > 0$).  For the remainder of the paper, when we use the term \emph{images} we are referring to entire images from our database.  When we use the term \emph{image patches} we are referring to small $n \times n$ contiguous portions of images in our database.  When we use the term \emph{dictionary patches}, we are specifically referring to patches which we have chosen to store in our \texttt{patch\_dict} and use for compression.  Here we present an overview of our compression method; in subsequent subsections we delve into the details.  
 
-We begin our compression algorithm by seeding \texttt{patch\_dict} with an initial set of dictionary patches.  These patches are chosen from randomly selected $n \times n$ image patches from the entire image database (see sec. \ref{sec:sample} for a discussion of this seeding strategy).   During the image insertion step, we partition each of our images into $\left(\frac{m}{n}\right)^2$ non-overlapping patches, with the intent of mapping each image patch $P_j$ to a patch in \texttt{patch\_dict}.  Thus, rather than storing the original image patch for a given image, we simply store a pointer to a patch in \texttt{patch\_dict}.  The dictionary patch we choose is the one which is closest to the image patch in some similarity space $S$, i.e. the patch $P_{NN}$ in \texttt{patch\_dict} such that $S(P_{NN}, P_j)$ is minimized.  If $S(P_{NN}, P_j) > T$, we then store $P_j$ as a new patch in \texttt{patch\_dict} and add a pointer to this dictionary patch from the image (at the corresponding $(x,y)$ location in the image).  Algorithm \ref{alg:insert} summarizes the image insertion procedure. Assuming that our patch dictionary is a good sample of the image patches in our image database, adding additional patches should be a relative rare procedure.  We discuss how often these extra insertions are needed in sec. \ref{sec:growing_db}. Thus, the space savings come from only needing to store an effective pointer for each image patch, rather than the entire patch data.  Note that the maximum threshold on the similarity of image patches and dictionary patches guarantees that each compressed image is at most $\frac{mT}{n}$ away from its original counterpart in $S$.  
+We begin our compression algorithm by seeding \texttt{patch\_dict} with an initial set of dictionary patches.  These patches are chosen from randomly selected $n \times n$ image patches from the entire image database (see sec. \ref{sec:sample} for a discussion of this seeding strategy).   During the image insertion step, we partition each of our images into $\left(\frac{m}{n}\right)^2$ non-overlapping patches, with the intent of mapping each image patch $P_j$ to a patch in \texttt{patch\_dict}.  Thus, rather than storing the original image patch for a given image, we simply store a pointer to a patch in \texttt{patch\_dict}.  The dictionary patch we choose is the one which is closest to the image patch in some similarity space $S$, i.e. the patch $P_{NN}$ in \texttt{patch\_dict} such that $S(P_{NN}, P_j)$ is minimized.  If $S(P_{NN}, P_j) > T$, we then store $P_j$ as a new patch in \texttt{patch\_dict} and add a pointer to this dictionary patch from the image (at the corresponding $(x,y)$ location in the image).  Algorithm \ref{alg:insert} summarizes the image insertion procedure. Assuming that our patch dictionary is a good sample of the image patches in our image database, adding additional patches should be a relative rare procedure.  We discuss how often these extra insertions are needed in sec. \ref{sec:growing_db}. Thus, the space savings come from only needing to store an effective pointer for each image patch, rather than the entire patch data.  Note that the maximum threshold on the distance of image patches and dictionary patches guarantees that each compressed image is at most $\frac{mT}{n}$ away from its original counterpart in $S$.  
 
 \begin{algorithm}
     \caption{Insert Image $I$ into database}
@@ -95,9 +95,25 @@ refer to the left top corner location of each patch in the image.
 
 %In order to reconstruct an image from that patches, we run the following procedure:
 
+\subsection{}
+
+We optimized our system for its performance. In the original algorithm designed, for each image I to insert, we have (m/n)^2 queries into the database to figure out whether there are patches that are similar to each of image Iís patches. Depends on whether there are similar patches in the database, we also send a query to insert a patch for tiles in the image. This means for a single image insertion, we have 2*(m/n)^2 queries into the database. This decreases the performance of our system. To solve this problem, we devised the following modified algorithm.
+
+Algorithm for batch insert for a single image I
+Patches <- CutIntoPatches(I,patch_sizes=n)
+UniquePatchesWithinSingleImage <- FindUniquePatches(I)
+SimilarPatchesInDB <- GetLikelySimilarPatches(UniquePatchesWithinSingleImage)
+PatchesToStoreToDB = []
+for P_i, P_j in SimilarPatches, UniquePatchesWithinSingleImage do:
+     if S(P_i,P_j) > T
+        PatchesToStoreToDB.Add(P_j)
+BatchInsert(PatchesToStoreToDB)
+
+This batch insert ensure that for a single image, we at most query the database twice, once for finding all the likely similar patches in the database, once to batch insert all the patches into the database. This improves the performance of our system by a scale of (m/n)^2 which is a significant improvement. 
+The idea of this algorithm is that to do a local filtering among the patches of a single image before we query the database, such that the set of patches will only contains patches that are already greater than T distance away from each other.  Letís call the filtered set the unique set. Then we query the database to find the set of likely to be similar patches to each of the patches in the unique set we found locally for this image. Only if none of the likely-to-be similar patches in the database matches a patch in the unique set, we would later insert this patch. 
 
 
-\subsection{Patch Similarity}\label{sec:sim}
+\subsection{Patch Distance Metric}\label{sec:sim}
 There are many image similarity metrics that have been developed for
 images (see~\cite{yasmin2013use} for a good survey), and
 our method is applicable to any metric that involves Euclidean
@@ -114,7 +130,7 @@ S(P_i, P_j, u) = \frac{||P_i(u) - P_j(u)||^2}{n^2}
 \end{displaymath}
 where $||\cdot||$ denotes standard Euclidean norm.
 We normalize by the dimensionality of the space to allow us to keep the
-similarity threshold independent of the patch size. See section \ref{sec:simthresh} for more details.  A benefit of using a Euclidean distance metric is that it allows us to use LSH to retrieve patches that are likely to be similar.
+distance threshold independent of the patch size. See section \ref{sec:simthresh} for more details.  A benefit of using a Euclidean distance metric is that it allows us to use LSH to retrieve patches that are likely to be similar.
 
 \subsection{LSH for Patches}\label{sec:lsh}
 \begin{edit}
