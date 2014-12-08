@@ -32,7 +32,8 @@ public class Experimental {
 	 */
 	public static void main(String[] args) throws IOException, SQLException {
         //MockInsertImage();
-        DebugLoadImagesFromUrls();
+        //DebugLoadImagesFromUrls();
+		DumpPatchVectorsToFile();
     }
 
 	public static void MockInsertImage() throws IOException, SQLException {
