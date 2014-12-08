@@ -23,6 +23,24 @@ public class PatchDedup {
             x = inX;
             y = inY;
         }
+
+        public int getPatchIdX() {
+            return x / Constants.getPatchSize();
+        }
+
+        public int getPatchIdY() {
+            return y / Constants.getPatchSize();
+        }
+    }
+
+    public static class ClusterInfo {
+        public Integer seed_id = null;
+        public Set<Integer> member_ids = new HashSet<Integer>();
+
+        ClusterInfo(int in_seed_id) {
+            seed_id = in_seed_id;
+            member_ids.add(seed_id);
+        }
     }
 
     // Hashes
@@ -40,16 +58,49 @@ public class PatchDedup {
     public int processLocalPatch(PatchWrapper wrapper, int x, int y) {
         int localId = patches.size();
         patches.add(new PatchInfo(wrapper, x, y));
-
-        int hash = wrapper.getSingleHash();
-        if (!localHashes.containsKey(hash)) {
-            localHashes.put(hash, new HashSet<Integer>());
-        }
-        localHashes.get(hash).add(localId);
         return localId;
     }
 
+    // This gets us a smaller list of localHashes, where all members
+    // of a cluster now share a hash
+    public void handleSelfSimilarity() {
+        localHashes = new HashMap<Integer, Set<Integer>>();
+
+        PatchClustering clustering = new PatchClustering(patches);
+        clustering.cluster();
+        SimpleTimer.timedLog("(" + clustering.num_clusters() + " clusters)");
+
+        List<ClusterInfo> clusters = clustering.getClusters();
+        for (ClusterInfo ci : clusters) {
+            PatchWrapper seed_pwrapper = patches.get(ci.seed_id).pwrapper;
+            int hash = seed_pwrapper.getSingleHash();
+            if (!localHashes.containsKey(hash)) {
+                localHashes.put(hash, new HashSet<Integer>());
+            }
+            for (Integer localId : ci.member_ids) {
+                localHashes.get(hash).add(localId);
+            }
+        }
+        // Further have 2 options:
+        // 1. can check just cluster center against all stored patches in the bin
+        // 2. can check each cluster member against all stored patches in the bin
+        // Intuition: by far the longest step is retrieving possible candidates
+        //            from the DB; so #2 will take about as long as #1, but is more
+        //            precise.
+    }
+
     public Set<Integer> getUniqueHashes() {
+        if (localHashes.isEmpty()) {
+            for (int localId = 0; localId < patches.size(); ++localId) {
+                PatchInfo pinfo = patches.get(localId);
+                int hash = pinfo.pwrapper.getSingleHash();
+                if (!localHashes.containsKey(hash)) {
+                    localHashes.put(hash, new HashSet<Integer>());
+                }
+                localHashes.get(hash).add(localId);
+            }
+        }
+
         return localHashes.keySet();
     }
 
@@ -118,7 +169,7 @@ public class PatchDedup {
 		PatchInfo approxBest = closest_so_far;
 		for (PatchWrapper candidate : existingPatches) {
             PatchInfo sim = new PatchInfo(candidate);
-			sim.distance = ImageUtils.computeDistance(patch, candidate);
+			sim.distance = ImageUtils.computeNormChannelDistanceSquared(patch, candidate);
 			if (approxBest == null || MiscUtils.lessThan(sim.distance, approxBest.distance)) {
 				approxBest = sim;
 			}

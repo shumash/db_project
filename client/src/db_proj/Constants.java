@@ -3,7 +3,6 @@ package db_proj;
 import java.util.Vector;
 
 public class Constants {
-
 	public static int PATCH_CACHE_SIZE = 10000;  // patches
 	public static int HASH_BIN_SIZE = 10;
 	public static boolean ENABLE_BRUTE_NEAREST_NEIGHBOR = false;
@@ -22,6 +21,10 @@ public class Constants {
 
     public static int getPatchesPerImage() {
         return (int) Math.pow(getSmallSize() / getPatchSize(), 2);
+    }
+
+    public static int getPatchesPerSide() {
+        return getSmallSize() / getPatchSize();
     }
 
 	public static LshHelper lshHelper() {

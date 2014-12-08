@@ -1,6 +1,7 @@
 package db_proj;
 
 import java.io.File;
+import java.io.PrintStream;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
@@ -33,6 +34,14 @@ public class MiscUtils {
 		}
 		return retVal;
 	}
+
+    static public void dumpToFile(double[] v, PrintStream output) {
+        for (int i = 0; i < v.length; ++i) {
+            output.print(v[i] + " ");
+        }
+        output.print("\n");
+    }
+
     static public void writeImageIdsToFile(String fileName, int[] imgIds){
         PrintWriter fw= null;
         try {
@@ -48,7 +57,5 @@ public class MiscUtils {
         }
         fw.flush();
         fw.close();
-
-
     }
 }
