@@ -309,6 +309,7 @@ public class Client {
 				}
 				SimpleTimer.timedLog("Finished batch-upload of " + files.size() +
 						" files in " + timer.getMs() + " ms\n");
+                Constants.lshHelper().printInfo();
 				MiscUtils.writeImageIdsToFile("batchShowIds",ids);
 			} else if (in.command.equals("img-store")) {
 				initDbClient();
@@ -363,15 +364,15 @@ public class Client {
 							//if (Math.random() <= percentage){
 							dbClient.storeImage(img, whole_url);
 							String[] sizes = dbClient.getAllSizes();
-							
+
 							writer.write(sizes[0]);
-							
+
 							for (int i = 1; i < sizes.length; i++){
 								writer.write(" " + sizes[i]);
 							}
 							writer.write("\n");
 							writer.flush();
-							
+
 							//}
 						}
 

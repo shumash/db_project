@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Scanner;
 import java.util.Vector;
 
 public class MiscUtils {
@@ -58,4 +59,29 @@ public class MiscUtils {
         fw.flush();
         fw.close();
     }
+
+    double[] readImgVectorFromFile(String inputFile) throws FileNotFoundException {
+    	Scanner input = new Scanner(new File(inputFile));
+
+    	String line = null;
+    	while (input.hasNextLine()) {
+    		line = input.nextLine();
+    		line.trim();
+    		if (line.length() > 0) {
+    			break;
+    		}
+    	}
+    	input.close();
+
+    	double[] res = new double[Constants.getPatchSize() * Constants.getPatchSize() * 3];
+		int col_num = 0;
+	    Scanner colReader = new Scanner(line);
+	    while (colReader.hasNextDouble()) {
+	        res[col_num] = colReader.nextDouble();
+			++col_num;
+	    }
+	    colReader.close();
+	    assert col_num == Constants.getPatchSize() * Constants.getPatchSize() * 3;
+	    return res;
+	}
 }

@@ -5,24 +5,14 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
-public class LshHelper {
-
-	double[][] projVectors = null;
-	int binSize = Constants.HASH_BIN_SIZE;
-
+abstract public class LshHelper {
+	protected double[][] projVectors = null;
 
 	// File of format
-	// a0 a1 ... an b w
-	LshHelper() {
-		try {
-			init(Constants.getHashVectorsFile());
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-			throw new RuntimeException(e.getMessage());
-		}
-	}
+	// a0 a1 ... an (opt: mu stdev)
+	LshHelper() {}
 
-	private void init(String projVectorsFile) throws FileNotFoundException {
+	protected void initProjVectors(String projVectorsFile, int expectedSize) throws FileNotFoundException {
 		ArrayList<String> lines = new ArrayList<String>();
 
 		Scanner input = new Scanner(new File(projVectorsFile));
@@ -34,6 +24,7 @@ public class LshHelper {
 			}
 		}
 		System.out.println("Reading " + lines.size() + " hash vectors");
+		input.close();
 
 		projVectors = new double[lines.size()][Constants.getPatchSize() * Constants.getPatchSize() * 3];
 		for (int i = 0; i < lines.size(); ++i) {
@@ -43,9 +34,13 @@ public class LshHelper {
 		        projVectors[i][col_num] = colReader.nextDouble();
 				++col_num;
 		    }
-		    assert col_num == Constants.getPatchSize() * Constants.getPatchSize() * 3;
+		    colReader.close();
+		    assert col_num == expectedSize;
 		}
 	}
+
+    public void printInfo() {
+    }
 
 	public int computeSingleIntegerHash(int[] hashes) {
         int result = 0;
@@ -57,36 +52,15 @@ public class LshHelper {
     }
 
 	public int[] getHashes(double[] imgVector, int numHashes) {
-		return getHashes(imgVector, numHashes, false);
-	}
-
-	public int[] getHashes(double[] imgVector, int numHashes, boolean nextBin) {
 		if (numHashes > projVectors.length) {
 			throw new IllegalArgumentException("More hashes requested than projection vectors");
 		}
 		int [] res = new int[numHashes];
 		for (int i = 0; i < numHashes; ++i) {
-			res[i] = computeHash(projVectors[i], imgVector, binSize, nextBin);
+			res[i] = computeHash(i, imgVector);
 		}
 		return res;
 	}
 
-	public static int computeHash(double[] hashVec, double[] imgVec, int binSize, boolean nextBin) {
-		double dot = 0;
-		for (int i = 0; i < imgVec.length; ++i) {
-			dot += hashVec[i] * imgVec[i];
-		}
-		dot = Math.abs(dot);
-		int bin = (int) Math.floor(dot / binSize);
-		if (!nextBin) {
-			return bin;
-		}
-
-		if (dot - bin * binSize > binSize / 2.0) {
-			return bin + 1;
-		} else {
-			return bin - 1;
-		}
-
-	}
+    abstract public int computeHash(int hashId, double[] imgVec);
 }

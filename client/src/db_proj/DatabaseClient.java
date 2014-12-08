@@ -27,7 +27,6 @@ public class DatabaseClient {
 
 	Connection conn = null;
 	PatchCache patchCache = new PatchCache(Constants.PATCH_CACHE_SIZE);
-	LshHelper lshHelper = new LshHelper();
 
 	// TODO: add initialization info that configures table to which
 	// images are added, etc.
