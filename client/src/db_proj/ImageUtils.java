@@ -235,6 +235,17 @@ public class ImageUtils {
 		};
 		return rgb;
 	}
+
+	public static BufferedImage thumbnail(BufferedImage image) {
+		int min_dim = Math.min(image.getHeight(), image.getWidth());
+    	BufferedImage cropped = image.getSubimage(0, 0, min_dim, min_dim);
+
+        BufferedImage newImage = new BufferedImage(Constants.getPatchSize(), Constants.getPatchSize(), image.getType());
+		Graphics g = newImage.createGraphics();
+		g.drawImage(cropped, 0, 0, Constants.getPatchSize(), Constants.getPatchSize(), null);
+		g.dispose();
+        return newImage;
+	}
     
     
 }

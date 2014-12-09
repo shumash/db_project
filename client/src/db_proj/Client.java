@@ -197,8 +197,8 @@ public class Client {
 			if (args.command.equals("db")){
 				res.setUrl("vise3.csail.mit.edu", "5432", "zoya");
 			} else if (args.command.equals("wei")) {
-                res.setUrl("localhost", "5432", "zoya");
-            }  else {
+				res.setUrl("localhost", "5432", "zoya");
+			}  else {
 				res.setLocalUrl(args.command);
 			}
 		} else {
@@ -267,17 +267,21 @@ public class Client {
 		display("img-load {local|db|web} [filename; relative to current path] - load or reload an image into local image variable");
 		display("img-show - show loaded image");
 		display("img-store [name] - stores loaded image with name, automatically patches everything");
+		display("img-store-no-patch [name] - stores images, forces no patches");
+		display("thumbnail-store [name]");
 		display("patch-load [id] - load or reload an image patch into local image variable");
 		display("reconstruct [id] - reconstruct image from patches and load into local image variable" );
 		display("clean [db] - clean the database.  Pass 'db' in for [db] to do foreign, anything else will be resolved as local");
 		display("random-sample [number]  - randomly sample the given number of images from the database and compress them");
 		display("upload-all [folder: images in this folder will all be uploaded] - load all images, but do not compress");
+		display("thumbnail-all [folder]");
 		display("get-sizes - get the sizes of the database, the tables");
 		display("run-script [script location] - runs commands in the text file");
 		display("get-quality [number] - get the quality of image reconstruction by random-sampling");
 		display("seed-sun - seed the sun database");
-        display("test-quality - for plotting quality metics ");
-        display("std-dev - output file of patch standard deviations");
+		display("test-quality - for plotting quality metics ");
+		display("std-dev - output file of patch standard deviations");
+		display("make-table");
 		display("-----------------");
 	}
 
@@ -311,14 +315,75 @@ public class Client {
 				}
 				SimpleTimer.timedLog("Finished batch-upload of " + files.size() +
 						" files in " + timer.getMs() + " ms\n");
-                Constants.lshHelper().printInfo();
+				Constants.lshHelper().printInfo();
 				MiscUtils.writeImageIdsToFile("batchShowIds",ids);
 			} else if (in.command.equals("img-store")) {
 				initDbClient();
 				timer.start();
 				int id = dbClient.storeImage(img, in.getArg(0));
 				System.out.println("Finished in " + timer.getMs() + " ms");
-			} else if (in.command.equals("img-show")) {
+			} else if (in.command.equals("img-store-no-patch")){
+				initDbClient();
+				int id = dbClient.storeImageForce(img, in.getArg(0));
+			}else if (in.command.equals("thumbnail-all")){
+				System.out.println("Seeding");
+				initDbClient();
+				timer.start();
+				String csvFile = "../data/manifest-sun2012.txt";
+				BufferedReader br = null;
+				String line = "";
+				String cvsSplitBy = "\t";
+				String prefix = "http://people.csail.mit.edu/aespielberg/SUN2012/Images";
+				Writer writer = null;
+				writer = new BufferedWriter(new OutputStreamWriter(
+						new FileOutputStream("sizes.txt"), "utf-8"));
+				try {
+
+					br = new BufferedReader(new FileReader(csvFile));
+					while ((line = br.readLine()) != null) {
+
+						// use comma as separator
+						String[] url = line.split(cvsSplitBy);
+						if (url[1].endsWith(".jpg")){
+							String whole_url = prefix + url[1].substring(1);
+							System.out.println(whole_url);
+							img = ImageUtils.loadWebImage(whole_url);
+							//if (Math.random() <= percentage){
+							dbClient.storeThumbnail(img, whole_url);
+							String[] sizes = dbClient.getAllSizes();
+
+							writer.write(sizes[0]);
+
+							for (int i = 1; i < sizes.length; i++){
+								writer.write(" " + sizes[i]);
+							}
+							writer.write("\n");
+							writer.flush();
+
+							//}
+						}
+
+					}
+
+				} catch (FileNotFoundException e) {
+					e.printStackTrace();
+				} catch (IOException e) {
+					e.printStackTrace();
+				} finally {
+					if (br != null) {
+						try {
+							br.close();
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+					}
+				}
+				writer.close();
+				System.out.println("Finished in " + timer.getMs() + " ms");
+			}else if (in.command.equals("thumbnail-store")){
+				initDbClient();
+				dbClient.storeThumbnail(img, in.getArg(0));
+			}else if (in.command.equals("img-show")) {
 				if (img != null) {
 					ImageUtils.showImage(img);
 				} else {
@@ -344,8 +409,13 @@ public class Client {
 				initDbClient();
 				dbClient.getStdDevStats();
 
-				
-			}else if (in.command.equals("seed-sun")){
+
+			}else if (in.command.equals("make-table")){
+				initDbClient();
+				dbClient.makeThumbnailsTable();
+			}
+
+			else if (in.command.equals("seed-sun")){
 				System.out.println("Seeding");
 				initDbClient();
 				timer.start();
@@ -356,7 +426,7 @@ public class Client {
 				String prefix = "http://people.csail.mit.edu/aespielberg/SUN2012/Images";
 				Writer writer = null;
 				writer = new BufferedWriter(new OutputStreamWriter(
-				          new FileOutputStream("sizes.txt"), "utf-8"));
+						new FileOutputStream("sizes.txt"), "utf-8"));
 				try {
 
 					br = new BufferedReader(new FileReader(csvFile));
@@ -451,7 +521,7 @@ public class Client {
 				timer.start();
 				List<String> imageFiles = dbClient.randomSample(Integer.parseInt(in.getArg(0)));
 				System.out.println("getting summs " + imageFiles.size()/2 );
-                List<Double> qualities = new ArrayList<Double>();
+				List<Double> qualities = new ArrayList<Double>();
 				for (int i = 0; i < imageFiles.size() / 2; i++) {
 					int id = Integer.parseInt(imageFiles.get(i*2+1));
 					System.out.println("ids: " + id);
@@ -459,14 +529,14 @@ public class Client {
 					BufferedImage reconstructed = dbClient.getImageReconstructed(id);
 					if (reconstructed != null) {
 						double dist = ImageUtils.computeNewDistance(ImageUtils.getImgVector(original), ImageUtils.getImgVector(reconstructed));
-                        qualities.add(dist);
+						qualities.add(dist);
 					}
 
 				}
-                Collections.sort(qualities);
-                System.out.println("best quality from sampled image is " +qualities.get(0));
-                System.out.println("worst quality from sampled image is " + qualities.get(qualities.size()-1));
-                System.out.println("median quality from sampled image is " + qualities.get(qualities.size()/2));
+				Collections.sort(qualities);
+				System.out.println("best quality from sampled image is " +qualities.get(0));
+				System.out.println("worst quality from sampled image is " + qualities.get(qualities.size()-1));
+				System.out.println("median quality from sampled image is " + qualities.get(qualities.size()/2));
 				System.out.println("average quality of sampled images is " + MiscUtils.getMean(qualities));
 				System.out.println("standard deviation of quality is " + MiscUtils.getStd(qualities));
 
@@ -474,37 +544,37 @@ public class Client {
 				System.out.println("Finished getting quality in " + timer.getMs() + " ms");
 
 			}else if(in.command.equals("test-quality")){
-                initDbClient();
-                timer.start();
-                int[] testingSamplingNumbers = {10,20,30,40};
-                double [] points = new double[2*testingSamplingNumbers.length];
-                for(int i=0; i < testingSamplingNumbers.length; i++){
-                    int num = testingSamplingNumbers[i];
-                    List<String> imageFiles = dbClient.randomSample(num);
-                    System.out.println("getting sum " + imageFiles.size()/2 );
-                    double sum = 0;
-                    int skipped = 0;
-                    //List<Integer> imgIds = new ArrayList<Integer>();
-                    for (int j = 0; j < imageFiles.size() / 2; j++) {
-                        int id = Integer.parseInt(imageFiles.get(j*2+1));
-                        System.out.println("ids: " + id);
-                        BufferedImage original = dbClient.getImage(id);
-                        BufferedImage reconstructed = dbClient.getImageReconstructed(id);
-                        if (reconstructed == null) {
-                            skipped +=1;
-                        }else{
-                            sum += ImageUtils.computeNewDistance(ImageUtils.getImgVector(original), ImageUtils.getImgVector(reconstructed));
-                        }
+				initDbClient();
+				timer.start();
+				int[] testingSamplingNumbers = {10,20,30,40};
+				double [] points = new double[2*testingSamplingNumbers.length];
+				for(int i=0; i < testingSamplingNumbers.length; i++){
+					int num = testingSamplingNumbers[i];
+					List<String> imageFiles = dbClient.randomSample(num);
+					System.out.println("getting sum " + imageFiles.size()/2 );
+					double sum = 0;
+					int skipped = 0;
+					//List<Integer> imgIds = new ArrayList<Integer>();
+					for (int j = 0; j < imageFiles.size() / 2; j++) {
+						int id = Integer.parseInt(imageFiles.get(j*2+1));
+						System.out.println("ids: " + id);
+						BufferedImage original = dbClient.getImage(id);
+						BufferedImage reconstructed = dbClient.getImageReconstructed(id);
+						if (reconstructed == null) {
+							skipped +=1;
+						}else{
+							sum += ImageUtils.computeNewDistance(ImageUtils.getImgVector(original), ImageUtils.getImgVector(reconstructed));
+						}
 
-                    }
-                    points[2*i]=num;
-                    points[2*i+1] = sum/(num-skipped);
-                    //MiscUtils.writeQualityMetric(sum,num-skipped);
-                }
-                MiscUtils.writeQualityMetric("testingQulaity", points);
-                System.out.println("Finished testing quality in " + timer.getMs() + " ms");
+					}
+					points[2*i]=num;
+					points[2*i+1] = sum/(num-skipped);
+					//MiscUtils.writeQualityMetric(sum,num-skipped);
+				}
+				MiscUtils.writeQualityMetric("testingQulaity", points);
+				System.out.println("Finished testing quality in " + timer.getMs() + " ms");
 
-            }
+			}
 			else {
 				display("Error: unknown command");
 			}
