@@ -1,10 +1,14 @@
 package db_proj;
 
+import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.ConnectException;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
 
 /**
  * Front-end client / interpreter that interacts with the
@@ -276,7 +280,7 @@ public class Client {
 		display("run-script [script location] - runs commands in the text file");
 		display("get-quality [number] - get the quality of image reconstruction by random-sampling");
 		display("seed-sun - seed the sun database");
-        display("test-quality - for plotting quality metics ");
+
         display("batch-reconstruct [number] - batch reconstruct number of images from db and show the results");
 		display("-----------------");
 	}
@@ -295,15 +299,13 @@ public class Client {
 				ArrayList<String> files = new ArrayList<String>();
 				MiscUtils.listFilesForFolder(new File(folder), files);
 				initDbClient();
-				int counter = 0;
-				int[] ids = new int[files.size()];
-				timer.start();
+                List<Integer> ids = new ArrayList<Integer>();
+                timer.start();
 				for (String filename : files) {
 					String full_file = folder + "/" + filename;
 					try {
 						img = loadImage("local", full_file);
-						ids[counter]= dbClient.storeImage(img, filename);
-						counter +=1;
+						ids.add(dbClient.storeImage(img, filename));
 					} catch (Exception e) {
 						System.out.println("Could not load/store file: " + full_file);
 						//                        throw e;
@@ -452,6 +454,7 @@ public class Client {
 					BufferedImage original = dbClient.getImage(id);
 					BufferedImage reconstructed = dbClient.getImageReconstructed(id);
 					if (reconstructed != null) {
+                        System.out.println("length : " + ImageUtils.getImgVector(original).length);
 						double dist = ImageUtils.computeNewDistance(ImageUtils.getImgVector(original), ImageUtils.getImgVector(reconstructed));
                         qualities.add(dist);
 					}
@@ -472,51 +475,26 @@ public class Client {
                 timer.start();
                 List<String> imageFiles = dbClient.randomSample(Integer.parseInt(in.getArg(0)));
                 System.out.println("getting summs " + imageFiles.size()/2 );
-                int[] ids = new int[imageFiles.size()/2];
+                //int[] ids = new int[imageFiles.size()/2];
+                List<Integer> ids = new ArrayList<Integer>();
                 for (int i = 0; i < imageFiles.size() / 2; i++) {
                     int id = Integer.parseInt(imageFiles.get(i*2+1));
                     System.out.println("ids: " + id);
                     BufferedImage original = dbClient.getImage(id);
                     BufferedImage reconstructed = dbClient.getImageReconstructed(id);
+
                     if(reconstructed!=null){
-                        ids[i] = id;
+                        ids.add(id);
+                        File outputfile = new File("original/original" + id + ".jpg");
+                        File outputfile1 = new File("reconstruction/reconstructed" + id + ".jpg");
+                        ImageIO.write(original, "jpg", outputfile);
+                        ImageIO.write(reconstructed, "jpg", outputfile1);
                     }
                 }
-                MiscUtils.writeImageIdsToFile("batchConstructIds", ids);
+                MiscUtils.writeImageIdsToFile("batchReconstructIds", ids);
 
             }
-            else if(in.command.equals("test-quality")){
-                initDbClient();
-                timer.start();
-                int[] testingSamplingNumbers = {10,20,30,40};
-                double [] points = new double[2*testingSamplingNumbers.length];
-                for(int i=0; i < testingSamplingNumbers.length; i++){
-                    int num = testingSamplingNumbers[i];
-                    List<String> imageFiles = dbClient.randomSample(num);
-                    System.out.println("getting sum " + imageFiles.size()/2 );
-                    double sum = 0;
-                    int skipped = 0;
-                    //List<Integer> imgIds = new ArrayList<Integer>();
-                    for (int j = 0; j < imageFiles.size() / 2; j++) {
-                        int id = Integer.parseInt(imageFiles.get(j*2+1));
-                        System.out.println("ids: " + id);
-                        BufferedImage original = dbClient.getImage(id);
-                        BufferedImage reconstructed = dbClient.getImageReconstructed(id);
-                        if (reconstructed == null) {
-                            skipped +=1;
-                        }else{
-                            sum += ImageUtils.computeNewDistance(ImageUtils.getImgVector(original), ImageUtils.getImgVector(reconstructed));
-                        }
 
-                    }
-                    points[2*i]=num;
-                    points[2*i+1] = sum/(num-skipped);
-                    //MiscUtils.writeQualityMetric(sum,num-skipped);
-                }
-                MiscUtils.writeQualityMetric("testingQulaity", points);
-                System.out.println("Finished testing quality in " + timer.getMs() + " ms");
-
-            }
 			else {
 				display("Error: unknown command");
 			}

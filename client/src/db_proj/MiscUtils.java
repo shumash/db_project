@@ -39,7 +39,7 @@ public class MiscUtils {
         output.print("\n");
     }
 
-    static public void writeImageIdsToFile(String fileName, int[] imgIds){
+    static public void writeImageIdsToFile(String fileName, List<Integer> imgIds){
         PrintWriter fw= null;
         try {
             fw = new PrintWriter(fileName, "UTF-8");
@@ -49,6 +49,7 @@ public class MiscUtils {
             e.printStackTrace();
         }
         for (int id : imgIds) {
+            fw.println("img-show");
             fw.println("reconstruct "+ id );
             fw.println("img-show");
         }
