@@ -1,0 +1,29 @@
+\section{Performance Optimization}\label{sec:opt}
+
+\input{near_neighbor}
+
+\subsection{DatabaseQueries}
+
+We optimized our system to decrease database queries. In algorithm \ref{alg:insert}, for each image $I$ to insert, we have $\left(\frac{m}{n}\right)^2$ queries into the database to figure out whether there are patches that are similar to each of image's patches. Depending on whether there are similar patches in the database, we also make a query to insert a patch. This means for a single image insertion, we make $2\left(\frac{m}{n}\right)^2$ queries into the database (i.e. 2 queries per patch). This decreases the performance of our system. To solve this problem, we devised the following modified algorithm:
+
+\begin{algorithm}
+    \caption{Optimization of alg.~\ref{alg:insert2}, with ANN}
+    \label{alg:optimized}
+\begin{algorithmic}[1]
+\State $Patches \leftarrow $ \texttt{Patchify}($I,n$)
+\State $UniquePatches \leftarrow$ \texttt{FindUniquePatches}($I$)
+\State $PatchesToStoreInDB \leftarrow []$
+\For{$P_j$ in $UniquePatches$}
+\State $SimPat \leftarrow $\texttt{FindLikelySimilarPatches}($P_j,patch\_dict$)
+\State $P_{ANN} \leftarrow M(P_j)$
+\If {$S(P_{ANN}, P_j) > T$}
+\State {$PatchesToStoreInDB$.Add($P_j$)}
+\EndIf
+\EndFor
+\State {\texttt{BatchInsert($PatchesToStoreInDB$)}}
+\vspace{3mm}
+\end{algorithmic}
+\end{algorithm}
+
+This batch insert ensures that for a single image, we at most query the database twice, once for finding all the likely similar patches in the database, and once to batch insert all the patches into the database. This reduces the queries made to the database by $\left(\frac{m}{n}\right)^2$ which is a significant improvement.
+The idea of this algorithm is to do a local filtering among the patches of a single image before we query the database, such that the set of patches will only contain patches that are already greater than $T$ distance away from each other.  Let's call the filtered set the \emph{unique patches}. Then we query the database to find the set of likely to be similar patches to each of the unique patches. Only if none of the likely-to-be similar patches in the database matches a patch from the unique patches, do we insert this patch.
