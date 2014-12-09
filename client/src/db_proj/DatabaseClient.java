@@ -742,6 +742,13 @@ public class DatabaseClient {
 			rs.next();
 			
 			
+			if (count == 2){
+				System.out.println(count);
+				System.out.println(rs.getInt(2));
+				return;
+			}
+			
+			
 			BufferedImage img;
 			count++;
 			System.out.println(count);

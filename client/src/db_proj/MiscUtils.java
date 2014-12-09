@@ -42,8 +42,8 @@ public class MiscUtils {
 		sigma[2] /= intensities.size();
 		
 		sigma[0] = Math.sqrt(sigma[0]);
-		sigma[1] = Math.sqrt(sigma[2]);
-		sigma[1] = Math.sqrt(sigma[2]);
+		sigma[1] = Math.sqrt(sigma[1]);
+		sigma[2] = Math.sqrt(sigma[2]);
 		return sigma;
 	}
 

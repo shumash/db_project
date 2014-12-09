@@ -222,7 +222,7 @@ public class ImageUtils {
 		double[] sigma = MiscUtils.stdDev(intensities);
 		
 		double[] thresh = Constants.getUniformColorThresh();
-		return sigma[0] < thresh[0] || sigma[1] < thresh[1] || sigma[2] < thresh[2];
+		return sigma[0] < thresh[0] && sigma[1] < thresh[1] && sigma[2] < thresh[2];
     }
 	
 	public static int[] getPixelData(BufferedImage img, int x, int y) {
