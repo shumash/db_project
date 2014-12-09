@@ -5,7 +5,7 @@ import org.junit.Test;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.util.ArrayList;
+import java.util.*;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -44,9 +44,9 @@ public class UnitTests {
     @Test
     public void testWritingIds() {
         int size = 5;
-        int[] nums = new int[size];
+        java.util.List<Integer> nums = new ArrayList<Integer>();
         for (int i = 0; i < size; i++) {
-            nums[i]=i;
+            nums.add(i);
         }
         MiscUtils.writeImageIdsToFile("test",nums);
     }

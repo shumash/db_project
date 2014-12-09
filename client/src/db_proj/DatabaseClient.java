@@ -110,9 +110,6 @@ public class DatabaseClient {
 		int imgId = insertImage(image, name == null ? "" : name);
 		timer.printDone();
 
-		List<PointerData> patchInfo = patchify(image, Constants.getPatchSize(), imgId,
-				false /* not mock */);
-		storePointers(patchInfo, imgId);
 
 		SimpleTimer.timedLog("Inserted image " + name + ", " + imgId + "\n");
 		return imgId;
@@ -280,6 +277,12 @@ public class DatabaseClient {
 			patchCache.addPatch(res);
 		}
 		return res;
+	}
+	
+	public void makeThumbnailsTable() throws SQLException{
+		PreparedStatement ps = conn.prepareStatement("CREATE TABLE images_as_thumbnails (id int PRIMARY KEY, imgname text, img bytea)");
+		ps.executeUpdate();
+		ps.close();
 	}
 
 	/**
@@ -744,9 +747,15 @@ public class DatabaseClient {
 			rs.next();
 			
 			
+
+				System.out.println(count);
+				System.out.println(rs.getInt(2));
+
+			
+			
 			BufferedImage img;
 			count++;
-			System.out.println(count);
+
 			Vector<int[]> intensities = new Vector<int[]>();
 			img = getImgFromRes(rs, 1);
 			if (img == null){
@@ -831,6 +840,44 @@ public class DatabaseClient {
 		String value = rs.getString(1);
 		rs.close();
 		return value;
+	}
+
+	public int storeThumbnail(BufferedImage image, String name) throws SQLException, IOException {
+		SimpleTimer timer = new SimpleTimer();
+		SimpleTimer.timedLog("Scaling image... ");
+		image = ImageUtils.thumbnail(image);
+		timer.printDone();
+
+		timer.start();
+		SimpleTimer.timedLog("Inserting image... ");
+		int imgId = insertImageThumbnail(image, name == null ? "" : name);
+		timer.printDone();
+
+		List<PointerData> patchInfo = patchify(image, Constants.getPatchSize(), imgId,
+				false /* not mock */);
+		storePointers(patchInfo, imgId);
+
+		SimpleTimer.timedLog("Inserted image " + name + ", " + imgId + "\n");
+		return imgId;
+		
+	}
+
+	private int insertImageThumbnail(BufferedImage image, String name) throws SQLException, IOException {
+		int id = getNextImageId();
+
+		// TODO: add warning if img with same name already exists
+
+		ByteArrayOutputStream os = new ByteArrayOutputStream();
+		ImageIO.write(image,"png", os);
+		InputStream fis = new ByteArrayInputStream(os.toByteArray());
+		PreparedStatement ps = conn.prepareStatement("INSERT INTO images_as_thumbnails VALUES (?, ?, ?)");
+		ps.setInt(1, id);
+		ps.setString(2, name);
+		ps.setBinaryStream(3, fis, (int)os.toByteArray().length);
+		ps.executeUpdate();
+		ps.close();
+		fis.close();
+		return id;
 	}
 
 

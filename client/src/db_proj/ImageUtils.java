@@ -2,16 +2,13 @@ package db_proj;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
-
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Random;
-import java.util.Vector;
+import java.util.*;
 import java.util.List;
-import java.util.ArrayList;
 
 /**
  * Encapsulates low-level image utilities, mostly as static methods.
@@ -124,14 +121,45 @@ public class ImageUtils {
 		return computeNormChannelDistanceSquared(pw1.getImgVector(), pw2.getImgVector());
 	}
 
-    public static double computeNewDistance(double[] v1, double[] v2) {
+    public static double[] normalize(double[] v1){
+        double [] normalized = new double[v1.length];
+        int elems = v1.length / 3;
+        for (int i = 0; i < elems; ++i) {
+            // divide L by 100
+            // add 100 to U/V and divide by 200
+            double L = v1[i*3];
+            double U = v1[3*i + 1];
+            double V = v1[3*i + 2];
+            normalized[3*i] = L/100;
+            normalized[3*i+1] = (U+100)/200;
+            normalized[3*i+2] = (V+100)/200;
+        }
+        return normalized;
+    }
+    // to calculate the newly nomalized distances
+    public static double computeNewDistance(double[] va, double[] vb) {
         double dis = 0;
-        assert v1.length == v2.length;
-        int elems = v1.length;
+        assert va.length == vb.length;
+        double[] v1 = normalize(va);
+        double[] v2 = normalize(vb);
+
+        int elems = va.length;
         for (int i = 0; i < elems; ++i) {
                 dis += Math.pow(v1[i] - v2[i], 2.0);
         }
-        return Math.sqrt(dis)/elems;
+        List<Double> list1 = new ArrayList<Double>();
+        List<Double> list2 = new ArrayList<Double>();
+        for (int i = 0; i < elems; i++) {
+            list1.add(v1[i]);
+            list2.add(v2[i]);
+        }
+        Collections.sort(list1);
+        Collections.sort(list2);
+        System.out.println("min in v1, v2 " + list1.get(0) + " " + list2.get(0));
+        System.out.println("max in v1, v2 " + list1.get(elems-1) + " " + list2.get(elems-1));
+
+
+        return Math.sqrt(dis);
     }
 
 
@@ -222,7 +250,7 @@ public class ImageUtils {
 		double[] sigma = MiscUtils.stdDev(intensities);
 		
 		double[] thresh = Constants.getUniformColorThresh();
-		return sigma[0] < thresh[0] || sigma[1] < thresh[1] || sigma[2] < thresh[2];
+		return sigma[0] < thresh[0] && sigma[1] < thresh[1] && sigma[2] < thresh[2];
     }
 	
 	public static int[] getPixelData(BufferedImage img, int x, int y) {
@@ -234,6 +262,17 @@ public class ImageUtils {
 		    (argb      ) & 0xff  //blue
 		};
 		return rgb;
+	}
+
+	public static BufferedImage thumbnail(BufferedImage image) {
+		int min_dim = Math.min(image.getHeight(), image.getWidth());
+    	BufferedImage cropped = image.getSubimage(0, 0, min_dim, min_dim);
+
+        BufferedImage newImage = new BufferedImage(Constants.getPatchSize(), Constants.getPatchSize(), image.getType());
+		Graphics g = newImage.createGraphics();
+		g.drawImage(cropped, 0, 0, Constants.getPatchSize(), Constants.getPatchSize(), null);
+		g.dispose();
+        return newImage;
 	}
     
     
