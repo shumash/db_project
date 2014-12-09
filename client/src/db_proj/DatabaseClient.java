@@ -726,6 +726,49 @@ public class DatabaseClient {
 		return result;
 
 	}
+	
+	
+	
+	public void getStdDevStats() throws SQLException, IOException {
+		PrintWriter pw = new PrintWriter("../data/stddev.txt");
+		
+		
+
+		int count = 0;
+		while (true){
+			PreparedStatement ps = conn.prepareStatement("select img, id from patches OFFSET ? LIMIT 1");
+			ps.setInt(1, count);
+			ResultSet rs = ps.executeQuery();
+			rs.next();
+			
+			
+			BufferedImage img;
+			count++;
+			System.out.println(count);
+			Vector<Integer> intensities = new Vector<Integer>();
+			img = getImgFromRes(rs, 1);
+			if (img == null){
+				break; //end of loop
+			}
+			for(int i = 0; i < img.getHeight(); i++){
+			    for(int j = 0; j < img.getWidth(); j++){
+			       int[] data = ImageUtils.getPixelData(img, j, i);
+			       int intensity = data[0] + data[1] + data[2];
+			       intensities.add(intensity);
+			    }
+			}
+			double sigma = MiscUtils.stdDev(intensities);
+			pw.println(sigma);
+			pw.flush();
+		}
+		pw.close();
+		
+		
+		
+
+	}
+	
+	
 
 	public String getTableSize(String tableName) throws SQLException {
 		StringBuffer sb = new StringBuffer("SELECT pg_size_pretty(pg_relation_size('");

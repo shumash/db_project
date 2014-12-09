@@ -15,7 +15,12 @@ public class Constants {
 	private int smallSize = 500;
 	private String naiveHashVectorsFile = new String("../data/hash_vectors_rand25.txt");
     private String pcaHashVectorsFile = null;
-
+    private static double likelyUniformIntensityThresh = 25.0;
+    
+    public static double getUniformIntensityThresh(){
+    	return likelyUniformIntensityThresh;
+    }
+    
 	private LshHelper lshHelper_ = null;
 
 	private static Constants singleton = null;

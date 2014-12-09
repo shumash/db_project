@@ -208,4 +208,32 @@ public class ImageUtils {
     public static double[] getImgVector(BufferedImage img) {
         return  ImageUtils.toLuv(ImageUtils.toRgbVector(img));
     }
+    
+    
+    public static boolean isLikelyUniformIntensity(BufferedImage img){
+    	Vector<Integer> intensities = new Vector<Integer>();
+    	for(int i = 0; i < img.getHeight(); i++){
+		    for(int j = 0; j < img.getWidth(); j++){
+		       int[] data = ImageUtils.getPixelData(img, j, i);
+		       int intensity = data[0] + data[1] + data[2];
+		       intensities.add(intensity);
+		    }
+		}
+		double sigma = MiscUtils.stdDev(intensities);
+		
+		return sigma < Constants.getUniformIntensityThresh();
+    }
+	
+	public static int[] getPixelData(BufferedImage img, int x, int y) {
+		int argb = img.getRGB(x, y);
+
+		int rgb[] = new int[] {
+		    (argb >> 16) & 0xff, //red
+		    (argb >>  8) & 0xff, //green
+		    (argb      ) & 0xff  //blue
+		};
+		return rgb;
+	}
+    
+    
 }

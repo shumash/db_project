@@ -10,6 +10,26 @@ public class MiscUtils {
 	static public void listFilesForFolder(final File folder, ArrayList<String> files) {
         listFilesForFolder(folder, files, "");
 	}
+	
+	public static double mean(Vector<Integer> intensities){
+		double mean = 0;
+		
+		for (Integer intensity : intensities){
+			mean += intensity;
+		}
+		
+		return mean / intensities.size();
+	}
+	
+	public static double stdDev(Vector<Integer> intensities){
+		double mu = MiscUtils.mean(intensities);
+		
+		double sigma = 0;
+		for (Integer intensity : intensities){
+			sigma += (intensity - mu)* (intensity - mu);
+		}
+		return Math.sqrt(sigma / intensities.size());
+	}
 
     static private void listFilesForFolder(final File folder, ArrayList<String> files, String prefix) {
 	    for (final File fileEntry : folder.listFiles()) {

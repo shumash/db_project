@@ -277,6 +277,7 @@ public class Client {
 		display("get-quality [number] - get the quality of image reconstruction by random-sampling");
 		display("seed-sun - seed the sun database");
         display("test-quality - for plotting quality metics ");
+        display("std-dev - output file of patch standard deviations");
 		display("-----------------");
 	}
 
@@ -339,7 +340,12 @@ public class Client {
 			} else if (in.command.equals("clean")) {
 				initDbClient();
 				dbClient.clean(in.getArg(0));
-			} else if (in.command.equals("seed-sun")){
+			} else if (in.command.equals("std-dev")){
+				initDbClient();
+				dbClient.getStdDevStats();
+
+				
+			}else if (in.command.equals("seed-sun")){
 				System.out.println("Seeding");
 				initDbClient();
 				timer.start();
