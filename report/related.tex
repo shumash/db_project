@@ -6,14 +6,4 @@ In the age of big data, when the amount of images in image collections grows at 
 
 Some of our inspiration comes from \emph{raster databases}, which encode images (often of geospatial data) as a set of smaller images/regions with locations in the original large image. Such a set-up is convenient for transmission or data loading, as it is possible to load and process only parts of the image at a time. Geodatabases, such as \emph{ArcGIS} are set-up this way \cite{ArcGIS}.
 
-We combine the idea of raster databases with the idea of image compression. Patch-based image representations are also used in computer vision for various tasks, including image matching \cite{Brown05}, object recognition \cite{vashist2006dps}, and image processing \cite{Barnes2009}. Considering images as collections of patches allows for arbitrary spatial matching. 
-
-\begin{edit}
-
-Image similarity functions.
-
-Image quality functions.
-
-Hashing, in particular~\cite{LSH:Andoni}.
-
-\end{edit}
+We combine the idea of raster databases with the idea of image compression. Patch-based image representations are also used in computer vision for various tasks, including image matching \cite{Brown05}, object recognition \cite{vashist2006dps}, and image processing \cite{Barnes2009}. Considering images as collections of patches allows for matching without rigid spatial constraints. In other words, such approaches can often find approximate image matches, such as different viewpoints of the same scene. Patch-based approaches have thus proven to be sufficient for scene recognition applications. We adapt a patch-based approach as well. Even very coarse-grained patches can provide sufficient visual information for scene recognition purposes. Thus, if we reconstruct images from approximately-similar coarse-grained patches, they will still provide sufficient input to scene classification algorithms, for instance.
