@@ -210,18 +210,19 @@ public class ImageUtils {
     }
     
     
-    public static boolean isLikelyUniformIntensity(BufferedImage img){
-    	Vector<Integer> intensities = new Vector<Integer>();
+    public static boolean isLikelyUniformColor(BufferedImage img){
+    	Vector<int[]> intensities = new Vector<int[]>();
     	for(int i = 0; i < img.getHeight(); i++){
 		    for(int j = 0; j < img.getWidth(); j++){
 		       int[] data = ImageUtils.getPixelData(img, j, i);
-		       int intensity = data[0] + data[1] + data[2];
-		       intensities.add(intensity);
+		       intensities.add(data);
 		    }
 		}
-		double sigma = MiscUtils.stdDev(intensities);
+    	
+		double[] sigma = MiscUtils.stdDev(intensities);
 		
-		return sigma < Constants.getUniformIntensityThresh();
+		double[] thresh = Constants.getUniformColorThresh();
+		return sigma[0] < thresh[0] || sigma[1] < thresh[1] || sigma[2] < thresh[2];
     }
 	
 	public static int[] getPixelData(BufferedImage img, int x, int y) {

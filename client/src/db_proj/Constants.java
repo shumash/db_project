@@ -16,9 +16,14 @@ public class Constants {
 	private String naiveHashVectorsFile = new String("../data/hash_vectors_rand25.txt");
     private String pcaHashVectorsFile = null;
     private static double likelyUniformIntensityThresh = 25.0;
+	private static double[] likelyUniformColorThresh = new double[]{14.0, 14.0, 14.0};
     
     public static double getUniformIntensityThresh(){
     	return likelyUniformIntensityThresh;
+    }
+    
+    public static double[] getUniformColorThresh(){
+    	return likelyUniformColorThresh ;
     }
     
 	private LshHelper lshHelper_ = null;

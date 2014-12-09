@@ -11,24 +11,40 @@ public class MiscUtils {
         listFilesForFolder(folder, files, "");
 	}
 	
-	public static double mean(Vector<Integer> intensities){
-		double mean = 0;
+	public static double[] mean(Vector<int[]> intensities){
+		double[] mean = new double[3];
 		
-		for (Integer intensity : intensities){
-			mean += intensity;
+		for (int[] intensity : intensities){
+			mean[0] += intensity[0];
+			mean[1] += intensity[1];
+			mean[2] += intensity[2];
 		}
 		
-		return mean / intensities.size();
+		mean[0] /= intensities.size();
+		mean[1] /= intensities.size();
+		mean[2] /= intensities.size();
+		
+		return mean;
 	}
 	
-	public static double stdDev(Vector<Integer> intensities){
-		double mu = MiscUtils.mean(intensities);
+	public static double[] stdDev(Vector<int[]> intensities){
+		double[] mu = MiscUtils.mean(intensities);
 		
-		double sigma = 0;
-		for (Integer intensity : intensities){
-			sigma += (intensity - mu)* (intensity - mu);
+		double[] sigma = new double[3];
+		for (int[] intensity : intensities){
+			sigma[0] += (intensity[0] - mu[0])* (intensity[0] - mu[0]);
+			sigma[1] += (intensity[1] - mu[1])* (intensity[1] - mu[1]);
+			sigma[2] += (intensity[2] - mu[2])* (intensity[2] - mu[2]);
 		}
-		return Math.sqrt(sigma / intensities.size());
+		
+		sigma[0] /= intensities.size();
+		sigma[1] /= intensities.size();
+		sigma[2] /= intensities.size();
+		
+		sigma[0] = Math.sqrt(sigma[0]);
+		sigma[1] = Math.sqrt(sigma[2]);
+		sigma[1] = Math.sqrt(sigma[2]);
+		return sigma;
 	}
 
     static private void listFilesForFolder(final File folder, ArrayList<String> files, String prefix) {

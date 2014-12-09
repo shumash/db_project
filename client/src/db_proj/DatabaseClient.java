@@ -745,20 +745,19 @@ public class DatabaseClient {
 			BufferedImage img;
 			count++;
 			System.out.println(count);
-			Vector<Integer> intensities = new Vector<Integer>();
+			Vector<int[]> intensities = new Vector<int[]>();
 			img = getImgFromRes(rs, 1);
 			if (img == null){
 				break; //end of loop
 			}
 			for(int i = 0; i < img.getHeight(); i++){
 			    for(int j = 0; j < img.getWidth(); j++){
-			       int[] data = ImageUtils.getPixelData(img, j, i);
-			       int intensity = data[0] + data[1] + data[2];
+			       int[] intensity = ImageUtils.getPixelData(img, j, i);
 			       intensities.add(intensity);
 			    }
 			}
-			double sigma = MiscUtils.stdDev(intensities);
-			pw.println(sigma);
+			double[] sigma = MiscUtils.stdDev(intensities);
+			pw.println(sigma[0] + " " + sigma[1] + " " + sigma[2]);
 			pw.flush();
 		}
 		pw.close();
