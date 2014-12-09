@@ -190,10 +190,10 @@ public class ImageUtils {
 
 		// Get about every 5th patch
         List<BufferedImage> res = new ArrayList<BufferedImage>(horPatches * vertPatches);
-		for (int i = 0; i < horPatches; i++){
+		for (int i = 0; i < horPatches; i++) {
 			for (int j = 0; j < vertPatches; j++) {
 				int randomNum = rand.nextInt(1000);
-				if (randomNum % 5 == 0) {
+				if (randomNum % 10 == 0) {
 					BufferedImage patch = image.getSubimage(i * pSize,
 							j * pSize,
 							pSize,

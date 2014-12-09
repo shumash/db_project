@@ -20,7 +20,7 @@ public class PcaLshHelper extends LshHelper{
 			throw new RuntimeException(e.getMessage());
 		}
 	}
-	
+
 	public double computeDot(int hashId, double[] imgVec) {
 		double[] hashVec = projVectors[hashId + 1];
 		double[] muVec = projVectors[0];
@@ -63,6 +63,9 @@ public class PcaLshHelper extends LshHelper{
             bin = 8;
         }
 
+        // SimpleTimer.timedLog("i " + hashId + " - dot: " + dot +
+        //                      " for distr(mu = " + mean_dot + ", sigma = " + stdev +
+        //                      ") => bin " + bin + "\n");
         return bin;
 	}
 }

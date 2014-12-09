@@ -295,6 +295,16 @@ public class Client {
 				ArrayList<String> files = new ArrayList<String>();
 				MiscUtils.listFilesForFolder(new File(folder), files);
 				initDbClient();
+				
+				// HACK
+				String uploadLogFile = new String("/tmp/upload_log");
+				SimpleTimer.timedLog("Writing upload log to file: " + uploadLogFile + "\n");
+				PrintStream orig_stdout = System.out;
+				orig_stdout.flush();
+				PrintStream output = new PrintStream(new File(uploadLogFile));
+				System.setOut(output);
+				// END OF HACK
+				
 				int counter = 0;
 				int[] ids = new int[files.size()];
 				timer.start();
@@ -309,10 +319,14 @@ public class Client {
 						//                        throw e;
 					}
 				}
+				Constants.lshHelper().printInfo();
+				output.flush();
+                output.close();
+                System.setOut(orig_stdout);
 				SimpleTimer.timedLog("Finished batch-upload of " + files.size() +
-						" files in " + timer.getMs() + " ms\n");
-                Constants.lshHelper().printInfo();
-				MiscUtils.writeImageIdsToFile("batchShowIds",ids);
+						" files in " + timer.getMs() + " ms (log: /tmp/upload_log)\n");
+				
+				//MiscUtils.writeImageIdsToFile("batchShowIds",ids);
 			} else if (in.command.equals("img-store")) {
 				initDbClient();
 				timer.start();

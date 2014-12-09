@@ -371,14 +371,16 @@ public class DatabaseClient {
 		Set<Integer> hashes = dedup.getUniqueHashes();
 		SimpleTimer.timedLog("Hashes w/o self similarity: " + hashes.size() + "\n");
 
-		timer.start();
-		SimpleTimer.timedLog("Handling self-similarity... ");
-		dedup.handleSelfSimilarity();
-		hashes = dedup.getUniqueHashes();
-		timer.printDone();
-		SimpleTimer.timedLog("Hashes after self similarity: " + hashes.size() + "\n");
-
+        if (Constants.EXPLOIT_SELF_SIMILARITY) {
+            timer.start();
+            SimpleTimer.timedLog("Handling self-similarity... ");
+            dedup.handleSelfSimilarity();
+            hashes = dedup.getUniqueHashes();
+            timer.printDone();
+            SimpleTimer.timedLog("Hashes after self similarity: " + hashes.size() + "\n");
+        }
 		Map<Integer, List<PatchWrapper> > existingPatches = getExistingPatches(hashes);
+        //        SimpleTimer.timedLog("Hashes: " + hashes.toString() + "\n");
 
 		timer.start();
 		SimpleTimer.timedLog("Figuring out which patches to store... ");
