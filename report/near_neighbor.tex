@@ -35,6 +35,7 @@ P[b(P_i) = b(P_j) | S(P_i, P_j) > cT] < P_2
 \end{aligned}
 \end{equation*}
 
+% Rand proj; right: tables + concat
 \begin{figure}[ht!]
 \centering
 \subfigure[Random projection hashing]{%
@@ -52,6 +53,10 @@ P[b(P_i) = b(P_j) | S(P_i, P_j) > cT] < P_2
 
 \subsection{PCA-based LSH}
 
+% PCA-based LHS;\\
+% 3 distributions\\
+% all components
+
 \begin{figure}[ht!]
 \centering
 \includegraphics[width=3in]{fig_NN/lambdas.jpg}
@@ -68,4 +73,41 @@ SUN database~\cite{SUN}.
 
 \subsection{Color Uniformity}
 
-\subsection{Analysis}
+
+
+\subsection{NN Results and Analysis}
+
+We constructed 3 databases on the same set of
+10,000 images sampled
+from all categories of the SUN database, with image size
+set to 500, and patch size set to 25, using the following
+hashing strategies for Near Neighbor(NN) search:\\
+\begin{enumerate}
+\item \textbf{Naive NN}: 10 random projection vectors sampled from unit Normal with
+uniform bin size (outliers truncated)
+\item \textbf{PCA NN}: 10 first principla components as projection vectors with
+bin size adapted to the distribution of projections
+\item \textbf{PCA + U NN}: nearly uniform patches are handled using a separate
+hash table, and non-uniform patches handled with PCA NN
+\end{enumerate}
+
+To evaluate the results of this, we computed the following metrics.
+
+%FR - found ratio: Count(good match found)/Count(good match not found)
+
+% Table
+\begin{table}
+\begin{tabular}{ l | c || r }
+& time & #patches & #bins & FR & Stime & FPQ & IRQ \\
+Naive NN & & & & & & \\
+PCA NN & 7h27min & 3,309,583 & 2,751,235 & & &  \\
+PCA + U NN & & & & & &
+\end{tabular}
+\caption{Results on 10,000 images samples from all
+the categories of the SUN database, where the rows
+are for naive projection hashing, PCA-based hashing and
+PCA-based hashing combine with uniform patch hashing.}
+\label{tb:nn-res}
+\end{table}
+
+PCA NN: Finished batch-upload of 10000 files in 26827397
