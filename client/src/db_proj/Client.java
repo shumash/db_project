@@ -316,8 +316,8 @@ public class Client {
 				System.setOut(output);
 				// END OF HACK
 
-				int counter = 0;
-				int[] ids = new int[files.size()];
+				//int counter = 0;
+				//int[] ids = new int[files.size()];
 				timer.start();
 
                 List<Integer> ids = new ArrayList<Integer>();
