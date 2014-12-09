@@ -280,8 +280,8 @@ public class Client {
 		display("run-script [script location] - runs commands in the text file");
 		display("get-quality [number] - get the quality of image reconstruction by random-sampling");
 		display("seed-sun - seed the sun database");
-
         display("batch-reconstruct [number] - batch reconstruct number of images from db and show the results");
+        display("std-dev - output file of patch standard deviations");
 		display("-----------------");
 	}
 
@@ -313,6 +313,7 @@ public class Client {
 				}
 				SimpleTimer.timedLog("Finished batch-upload of " + files.size() +
 						" files in " + timer.getMs() + " ms\n");
+                Constants.lshHelper().printInfo();
 				MiscUtils.writeImageIdsToFile("batchShowIds",ids);
 			} else if (in.command.equals("img-store")) {
 				initDbClient();
@@ -341,7 +342,12 @@ public class Client {
 			} else if (in.command.equals("clean")) {
 				initDbClient();
 				dbClient.clean(in.getArg(0));
-			} else if (in.command.equals("seed-sun")){
+			} else if (in.command.equals("std-dev")){
+				initDbClient();
+				dbClient.getStdDevStats();
+
+				
+			}else if (in.command.equals("seed-sun")){
 				System.out.println("Seeding");
 				initDbClient();
 				timer.start();
@@ -367,15 +373,15 @@ public class Client {
 							//if (Math.random() <= percentage){
 							dbClient.storeImage(img, whole_url);
 							String[] sizes = dbClient.getAllSizes();
-							
+
 							writer.write(sizes[0]);
-							
+
 							for (int i = 1; i < sizes.length; i++){
 								writer.write(" " + sizes[i]);
 							}
 							writer.write("\n");
 							writer.flush();
-							
+
 							//}
 						}
 

@@ -2,12 +2,49 @@ package db_proj;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Scanner;
 import java.util.List;
 import java.util.Vector;
 
 public class MiscUtils {
 	static public void listFilesForFolder(final File folder, ArrayList<String> files) {
         listFilesForFolder(folder, files, "");
+	}
+	
+	public static double[] mean(Vector<int[]> intensities){
+		double[] mean = new double[3];
+		
+		for (int[] intensity : intensities){
+			mean[0] += intensity[0];
+			mean[1] += intensity[1];
+			mean[2] += intensity[2];
+		}
+		
+		mean[0] /= intensities.size();
+		mean[1] /= intensities.size();
+		mean[2] /= intensities.size();
+		
+		return mean;
+	}
+	
+	public static double[] stdDev(Vector<int[]> intensities){
+		double[] mu = MiscUtils.mean(intensities);
+		
+		double[] sigma = new double[3];
+		for (int[] intensity : intensities){
+			sigma[0] += (intensity[0] - mu[0])* (intensity[0] - mu[0]);
+			sigma[1] += (intensity[1] - mu[1])* (intensity[1] - mu[1]);
+			sigma[2] += (intensity[2] - mu[2])* (intensity[2] - mu[2]);
+		}
+		
+		sigma[0] /= intensities.size();
+		sigma[1] /= intensities.size();
+		sigma[2] /= intensities.size();
+		
+		sigma[0] = Math.sqrt(sigma[0]);
+		sigma[1] = Math.sqrt(sigma[1]);
+		sigma[2] = Math.sqrt(sigma[2]);
+		return sigma;
 	}
 
     static private void listFilesForFolder(final File folder, ArrayList<String> files, String prefix) {
@@ -57,6 +94,31 @@ public class MiscUtils {
         fw.close();
     }
 
+    double[] readImgVectorFromFile(String inputFile) throws FileNotFoundException {
+    	Scanner input = new Scanner(new File(inputFile));
+
+    	String line = null;
+    	while (input.hasNextLine()) {
+    		line = input.nextLine();
+    		line.trim();
+    		if (line.length() > 0) {
+    			break;
+    		}
+    	}
+    	input.close();
+
+    	double[] res = new double[Constants.getPatchSize() * Constants.getPatchSize() * 3];
+		int col_num = 0;
+	    Scanner colReader = new Scanner(line);
+	    while (colReader.hasNextDouble()) {
+	        res[col_num] = colReader.nextDouble();
+			++col_num;
+	    }
+	    colReader.close();
+	    assert col_num == Constants.getPatchSize() * Constants.getPatchSize() * 3;
+	    return res;
+	}
+
     static public void writeQualityMetric(String fileName, double[] points){
         PrintWriter fw= null;
         try {
@@ -92,5 +154,4 @@ public class MiscUtils {
         }
         return sum/p.size();
     }
-
 }

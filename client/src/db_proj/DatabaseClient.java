@@ -27,7 +27,6 @@ public class DatabaseClient {
 
 	Connection conn = null;
 	PatchCache patchCache = new PatchCache(Constants.PATCH_CACHE_SIZE);
-	LshHelper lshHelper = new LshHelper();
 
 	// TODO: add initialization info that configures table to which
 	// images are added, etc.
@@ -727,6 +726,54 @@ public class DatabaseClient {
 		return result;
 
 	}
+	
+	
+	
+	public void getStdDevStats() throws SQLException, IOException {
+		PrintWriter pw = new PrintWriter("../data/stddev.txt");
+		
+		
+
+		int count = 0;
+		while (true){
+			PreparedStatement ps = conn.prepareStatement("select img, id from patches OFFSET ? LIMIT 1");
+			ps.setInt(1, count);
+			ResultSet rs = ps.executeQuery();
+			rs.next();
+			
+			
+
+				System.out.println(count);
+				System.out.println(rs.getInt(2));
+
+			
+			
+			BufferedImage img;
+			count++;
+
+			Vector<int[]> intensities = new Vector<int[]>();
+			img = getImgFromRes(rs, 1);
+			if (img == null){
+				break; //end of loop
+			}
+			for(int i = 0; i < img.getHeight(); i++){
+			    for(int j = 0; j < img.getWidth(); j++){
+			       int[] intensity = ImageUtils.getPixelData(img, j, i);
+			       intensities.add(intensity);
+			    }
+			}
+			double[] sigma = MiscUtils.stdDev(intensities);
+			pw.println(sigma[0] + " " + sigma[1] + " " + sigma[2]);
+			pw.flush();
+		}
+		pw.close();
+		
+		
+		
+
+	}
+	
+	
 
 	public String getTableSize(String tableName) throws SQLException {
 		StringBuffer sb = new StringBuffer("SELECT pg_size_pretty(pg_relation_size('");
