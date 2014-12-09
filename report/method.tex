@@ -50,7 +50,7 @@ We begin our compression algorithm by seeding \texttt{patch\_dict} with an initi
 \end{algorithmic}
 \end{algorithm}
 
-With a large table of patches, finding the closest patch can be computationally expensive.  In order to speed up the search, we employ \emph{locality sensitive hashing} (LSH).  Although this softens the constraint that we always find the closest dictionary patch in \texttt{patch\_dict} for each image patch, the closest patch is still found with very high probability, and in expectation the selected patch is still very similar.  Section \ref{sec:opt} details nearest-neighbor retrieval, and alg.~\ref{alg:insert2} includes the algorithm updated to account for this optimization. 
+With a large table of patches, finding the closest patch can be computationally expensive.  In order to speed up the search, we employ \emph{locality sensitive hashing} (LSH).  Although this softens the constraint that we always find the closest dictionary patch in \texttt{patch\_dict} for each image patch, the closest patch is still found with very high probability, and in expectation the selected patch is still very similar.  Section \ref{sec:opt} details nearest-neighbor retrieval, and alg.~\ref{alg:insert2} includes the algorithm updated to account for this optimization.
 \begin{algorithm}
     \caption{Modification of alg.~\ref{alg:insert} with approximation}
     \label{alg:insert2}
@@ -131,8 +131,9 @@ patch_pointers(img_id int REFERENCES images(id),
                x int,
                y int);
 
-patch_hashes(patch_id int PRIMARY KEY REFERENCES patch_dict(id),
-             hash int);
+patch_hashes(
+   patch_id int PRIMARY KEY REFERENCES patch_dict(id),
+   hash int);
 \end{verbatim}
 where \texttt{patch\_pointers.x} and \texttt{patch\_pointers.y}
 refer to the left top corner location of each patch in the image.

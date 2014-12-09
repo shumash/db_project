@@ -1,29 +1,93 @@
-\section{Performance Optimization}\label{sec:opt}
+\section{Database Optimization}\label{sec:opt}
 
-\input{near_neighbor}
+In this section we discuss additional optimizations to the
+database to make efficient construction of patch database feasible.
+Here and below $I_{new}$ is an image about to be inserted into the
+database, and $P^n_1...P^n_j...$ are patches comprising it.
+To make large databases practical, our objective
+is to make the insertion process as fast as possible, given any of the
+Near Neighbor search methods described in Sec.~\ref{sec:nn}.
 
-\subsection{DatabaseQueries}
+\subsection{Database Queries}
 
-We optimized our system to decrease database queries. In algorithm \ref{alg:insert}, for each image $I$ to insert, we have $\left(\frac{m}{n}\right)^2$ queries into the database to figure out whether there are patches that are similar to each of image's patches. Depending on whether there are similar patches in the database, we also make a query to insert a patch. This means for a single image insertion, we make $2\left(\frac{m}{n}\right)^2$ queries into the database (i.e. 2 queries per patch). This decreases the performance of our system. To solve this problem, we devised the following modified algorithm:
+Referring back to Alg.~\ref{alg:insert2} and the definition of
+\texttt{FindLikely{\allowbreak}SimilarPatches} in Sec.~\ref{ssec:nn-lsh},
+it is clear that to insert $I_{new}$,
+about $2\left(\frac{m}{n}\right)^2$ database queries are issued:
+$\left(\frac{m}{n}\right)^2$ for finding near neighbors and
+at most $\left(\frac{m}{n}\right)^2$ for inserting any patches without matches.
+This incurrs a significant overhead, and we have modified our
+algorithm to make only at most 2 queries for every new image insertion.
+To accomplish this, we use batch query and insert, which result in 2
+database queries, once to find all the likely similar patches,
+and once to insert new patches (See Alg.~\ref{alg:optimized}).
 
-\begin{algorithm}
-    \caption{Optimization of alg.~\ref{alg:insert2}, with ANN}
-    \label{alg:optimized}
-\begin{algorithmic}[1]
-\State $Patches \leftarrow $ \texttt{Patchify}($I,n$)
-\State $UniquePatches \leftarrow$ \texttt{FindUniquePatches}($I$)
-\State $PatchesToStoreInDB \leftarrow []$
-\For{$P_j$ in $UniquePatches$}
-\State $SimPat \leftarrow $\texttt{FindLikelySimilarPatches}($P_j,patch\_dict$)
-\State $P_{ANN} \leftarrow M(P_j)$
-\If {$S(P_{ANN}, P_j) > T$}
-\State {$PatchesToStoreInDB$.Add($P_j$)}
-\EndIf
-\EndFor
-\State {\texttt{BatchInsert($PatchesToStoreInDB$)}}
-\vspace{3mm}
-\end{algorithmic}
+\begin{algorithm}[h!]
+  \caption{Optimization of alg.~\ref{alg:insert2} for DB Queries}
+  \label{alg:optimized}
+  \begin{algorithmic}[1]
+    \State {$Patches \leftarrow $ \texttt{Patchify}($I,n$) }
+    \State $Hashes \leftarrow [\;]$
+    \For{$P_j$ in $Patches$}
+    \State {$P_j.h \leftarrow \mathcal{G}$ (\texttt{ToVector($P_j$)})}
+    \State {\texttt{add} $P_j.h$ to $Hashes$}
+    \EndFor
+    \vspace{3mm}
+    \State $NewPatchesToStore \leftarrow [\;]$
+    \State {$StoredPatches \leftarrow $ \texttt{HashMap:} hash $\rightarrow$ [stored patches]}
+    \State {$StoredPatches$.\texttt{FillFrom(
+        select hash, patch from patch\_dict, patch\_hashes where hash in} $Hashes$)}
+    \For{$P_j$ in $Patches$}
+    \State $SimPat \leftarrow StoredPatches[P_j.h]$
+    \State $P_{ANN} \leftarrow $ $argmin_{P_i \in SimPat} \{ S(P_i, P_j) \}$
+    \If {$S(P_{ANN}, P_j) > T$}
+    \State {$NewPatchesToStore$.Add($P_j$)}
+    \State {$StoredPatches[P_j.h]$.Add($P_j$)}
+    \EndIf
+    \EndFor
+    \State {\texttt{BatchInsert($NewPatchesToStore$)}}
+    \vspace{3mm}
+  \end{algorithmic}
 \end{algorithm}
 
-This batch insert ensures that for a single image, we at most query the database twice, once for finding all the likely similar patches in the database, and once to batch insert all the patches into the database. This reduces the queries made to the database by $\left(\frac{m}{n}\right)^2$ which is a significant improvement.
+Please note that this hides some of the complexity, as we also need to keep
+track of pointer data, i.e. which stored patch ID each tile in the new image
+should point to. If \texttt{HashMap} contains newly processed patches that have
+not yet been inserted into the database, we need to make sure that in the end
+the pointers for the image contain the right database IDs.
+
+\subsection{Patch Buffer Pool}
+
+In order to further optimize performance, we implemented a \texttt{Buffer{\allowbreak}Pool}
+for patches with a least-recently-used (LRU) eviction policy. The LRU policy was picked
+based on the intuition that similar images are often processed together.
+This is particularly true if the database is constructed sequentially from a categorized
+database, such as SUN~\cite{SUN}.
+
+The function of the \texttt{Buffer{\allowbreak}Pool} is two-fold. In addition to
+minimizing database queries and random I/O for reading patches from disk, the
+\texttt{Buffer{\allowbreak}Pool} stores the hash value of each patch, as well as its
+vector form for faster computation of the distance $S$.
+These values are computed
+in a lazy fashion - only when requested. Given our unoptimized Java
+implementation of image vectorization and dot product,
+we found these measures to yield a non-negligible speed-up.
+
+\subsection{Exploiting Self-Similarity}
+
+\begin{edit}
+TODO: shumash will rewrite this
+
 The idea of this algorithm is to do a local filtering among the patches of a single image before we query the database, such that the set of patches will only contain patches that are already greater than $T$ distance away from each other.  Let's call the filtered set the \emph{unique patches}. Then we query the database to find the set of likely to be similar patches to each of the unique patches. Only if none of the likely-to-be similar patches in the database matches a patch from the unique patches, do we insert this patch.
+
+As discussed in [TODO], it is possible for similar patches to end up in
+different hash bins. Therefore, even if two patches $p_1$ and $p_2$
+from a new image are similar to each other, they may return
+different bin numbers. To minimize the number of queries to the database,
+we have experimented with exploiting self-similar
+
+
+ In general,
+this is fine, but in the case of Naive Near Neighbor search, where bins can
+contain a lot of elements, each additional
+\end{edit}

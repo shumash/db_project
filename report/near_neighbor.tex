@@ -1,4 +1,4 @@
-
+\section{Near Neighbor Search}\label{sec:nn}
 
 Fast retrieval of similar patches is crucial for making
 construction of a sizeable patch-based database feasible.
@@ -49,7 +49,24 @@ P[b(P_i) = b(P_j) | S(P_i, P_j) > cT] < P_2
 \label{fig:proj}
 \end{figure}
 
-\subsection{Naive LSH}
+\subsection{Near-Neighbor Search with LSH}\label{ssec:nn-lsh}
+
+Using a single amplified hash function $\mathcal{G}$, finding
+all likely neighbors of a patch simply amounts to computing
+its hash value and taking all the patches that fall into the
+same hash bin.
+Moreformally, we can define the function
+in Alg.~\ref{alg:insert2} as follows:
+\begin{algorithmic}[1]
+\Statex \texttt{\textbf{FindLikelySimilarPatches}}($P_j$):
+\State $h \leftarrow \mathcal{G}$ (\texttt{ToVector($P_j$)})
+\State $SimPat \leftarrow$ \texttt{select patch from patch\_dict where id in
+(select patch\_id from patch\_hashes where hash = h)}
+\end{algorithmic}
+Of course, the quality of the result depends heavily on the
+properties of the hash function, which is something we discuss next.
+
+\subsection{Naive LSH}\label{sec:naive-nn}
 
 \subsection{PCA-based LSH}
 
@@ -97,11 +114,14 @@ To evaluate the results of this, we computed the following metrics.
 
 % Table
 \begin{table}
-\begin{tabular}{ l | c || r }
-& time & #patches & #bins & FR & Stime & FPQ & IRQ \\
-Naive NN & & & & & & \\
-PCA NN & 7h27min & 3,309,583 & 2,751,235 & & &  \\
-PCA + U NN & & & & & &
+\begin{tabular}{ | l | l | l | l | l | l | l | l | }
+\hline
+& time & \#patches & \#bins & FR & Stime & FPQ & IRQ \\
+\hline
+Naive NN & & & & & & & \\
+PCA NN & 7h27min & 3,309,583 & 2,751,235 & & & &  \\
+PCA + U NN & & & & & & &\\
+\hline
 \end{tabular}
 \caption{Results on 10,000 images samples from all
 the categories of the SUN database, where the rows
