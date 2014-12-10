@@ -460,7 +460,7 @@ public class Client {
 					BufferedImage original = dbClient.getImage(id);
 					BufferedImage reconstructed = dbClient.getImageReconstructed(id);
 					if (reconstructed != null) {
-                        System.out.println("length : " + ImageUtils.getImgVector(original).length);
+                        //System.out.println("length : " + ImageUtils.getImgVector(original).length);
 						double dist = ImageUtils.computeNewDistance(ImageUtils.getImgVector(original), ImageUtils.getImgVector(reconstructed));
                         qualities.add(dist);
 					}
@@ -483,6 +483,7 @@ public class Client {
                 System.out.println("getting summs " + imageFiles.size()/2 );
                 //int[] ids = new int[imageFiles.size()/2];
                 List<Integer> ids = new ArrayList<Integer>();
+                List<Double> qualities = new ArrayList<Double>();
                 for (int i = 0; i < imageFiles.size() / 2; i++) {
                     int id = Integer.parseInt(imageFiles.get(i*2+1));
                     System.out.println("ids: " + id);
@@ -495,9 +496,19 @@ public class Client {
                         File outputfile1 = new File("reconstruction/reconstructed" + id + ".jpg");
                         ImageIO.write(original, "jpg", outputfile);
                         ImageIO.write(reconstructed, "jpg", outputfile1);
+                        double dist = ImageUtils.computeNewDistance(ImageUtils.getImgVector(original), ImageUtils.getImgVector(reconstructed));
+                        qualities.add(dist);
                     }
                 }
                 MiscUtils.writeImageIdsToFile("batchReconstructIds", ids);
+                Collections.sort(qualities);
+                System.out.println("best quality from sampled image is " +qualities.get(0));
+                System.out.println("worst quality from sampled image is " + qualities.get(qualities.size()-1));
+                System.out.println("median quality from sampled image is " + qualities.get(qualities.size()/2));
+                System.out.println("average quality of sampled images is " + MiscUtils.getMean(qualities));
+                System.out.println("standard deviation of quality is " + MiscUtils.getStd(qualities));
+
+                System.out.println("Finished batch reconstructing and getting statistics on numerical quality checking in " + timer.getMs() + " ms");
 
             }
 

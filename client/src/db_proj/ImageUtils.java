@@ -121,7 +121,7 @@ public class ImageUtils {
 		return computeNormChannelDistanceSquared(pw1.getImgVector(), pw2.getImgVector());
 	}
 
-    public static double[] normalize(double[] v1){
+    public static double[] rescale(double[] v1){
         double [] normalized = new double[v1.length];
         int elems = v1.length / 3;
         for (int i = 0; i < elems; ++i) {
@@ -136,17 +136,34 @@ public class ImageUtils {
         }
         return normalized;
     }
+
+    public static double[] normalize(double[] v){
+        double lengthSquared = 0;
+        for (int i = 0; i < v.length; i++) {
+          lengthSquared += v[i]*v[i]  ;
+        }
+        double[] res = new double[v.length];
+        double length = Math.sqrt(lengthSquared);
+        for (int i = 0; i < v.length; i++) {
+            res[i] = v[i]/length;
+        }
+        return res;
+
+    }
     // to calculate the newly nomalized distances
     public static double computeNewDistance(double[] va, double[] vb) {
         double dis = 0;
         assert va.length == vb.length;
-        double[] v1 = normalize(va);
-        double[] v2 = normalize(vb);
+        double[] v1 = rescale(va);
+        double[] v2 = rescale(vb);
+        v1 = normalize(v1);
+        v2 = normalize(v2);
 
         int elems = va.length;
         for (int i = 0; i < elems; ++i) {
                 dis += Math.pow(v1[i] - v2[i], 2.0);
         }
+        /*
         List<Double> list1 = new ArrayList<Double>();
         List<Double> list2 = new ArrayList<Double>();
         for (int i = 0; i < elems; i++) {
@@ -157,6 +174,7 @@ public class ImageUtils {
         Collections.sort(list2);
         System.out.println("min in v1, v2 " + list1.get(0) + " " + list2.get(0));
         System.out.println("max in v1, v2 " + list1.get(elems-1) + " " + list2.get(elems-1));
+        */
 
 
         return Math.sqrt(dis);
