@@ -6,15 +6,10 @@ be squares of the same size, $n^2$.
 We formally describe our method in Sec.~\ref{sec:overview}. To summarize,
 we first segment each image into patches and store them in the \texttt{patch\_dict} table, a dictionary of patches.
 Only patches sufficiently different
-from all the other patches in \texttt{patch\_dict} are subsequently added to the dictionary (See Sec.~\ref{sec:sim}).
-%Instead of storing each image explicitly, we approximate it by storing pointers to the patches approximating its original patches.
-\begin{edit}
-In
-Sec.~\ref{sec:lsh}, we describe the
-search algorithm used to quickly retrieve similar patches, and in Sec.~\ref{sec:reconst}
-we detail the indices that make image reconstruction faster. Finally, in
-Sec.~\ref{sec:impl} we provide database implementation details.
-\end{edit}
+from all the other patches in \texttt{patch\_dict} are subsequently added to the dictionary (see sec.~\ref{sec:alg}).
+We describe our patch distance in sec. \ref{sec:sim} and our implementation details in \ref{sec:impl}.
+Instead of storing each image explicitly, we store pointers to the patches approximating its original patches. 
+Thus, during reconstruction, we simply stitch together the patches using pointers (sec.~\ref{sec:reconst}).
 
 \subsection{Overview}
 \label{sec:overview}
@@ -31,7 +26,7 @@ Our method is governed by the following parameters:
 
 It is worth noting that we propose a \emph{lossy} compression scheme ($T > 0$).  For the remainder of the paper, when we use the term \emph{images} we are referring to entire images from our database.  When we use the term \emph{image patches} we are referring to small $n \times n$ contiguous portions of images in our database.  When we use the term \emph{dictionary patches}, we are specifically referring to patches which we have chosen to store in our \texttt{patch\_dict} and use for compression.  Here we present an overview of our compression method; in subsequent subsections we delve into the details.
 
-\subsection{Algorithm}
+\subsection{Algorithm} \label{sec:alg}
 
 We begin our compression algorithm by seeding \texttt{patch\_dict} with an initial set of dictionary patches.  These patches are chosen from randomly selected $n \times n$ image patches from the entire image database (see sec. \ref{sec:sample} for a discussion of this seeding strategy).   During the image insertion step, we partition each of our images into $\left(\frac{m}{n}\right)^2$ non-overlapping patches, with the intent of mapping each image patch $P_j$ to a patch in \texttt{patch\_dict}.  Thus, rather than storing the original image patch for a given image, we simply store a pointer to a patch in \texttt{patch\_dict}.  The dictionary patch we choose is the one which is closest to the image patch according to some distance metric $S$, i.e. the patch $P_{NN}$ in \texttt{patch\_dict} such that $S(P_{NN}, P_j)$ is minimized.  If $S(P_{NN}, P_j) > T$, we then store $P_j$ as a new patch in \texttt{patch\_dict} and add a pointer to this dictionary patch from the image (at the corresponding $(x,y)$ location in the image).  Algorithm \ref{alg:insert} summarizes the image insertion procedure. Assuming that our patch dictionary is a good sample of the image patches in our image database, adding additional patches should be a relative rare procedure.  We discuss how often these extra insertions are needed in sec. \ref{sec:growing_db}. Thus, the space savings come from only needing to store an effective pointer for each image patch, rather than the entire patch data.  Note that the maximum threshold on the distance of image patches and dictionary patches guarantees that each compressed image is at most $\frac{mT}{n}$ away from its original counterpart in $S$.
 
@@ -152,8 +147,21 @@ refer to the left top corner location of each patch in the image.
 
 \subsection{Image Reconstruction}\label{sec:reconst}
 
-In order to reconstruct images quickly, we
-\begin{edit}
-complete this section\\
-Ask wei for sample sql queries and pseudocode
-\end{edit}
+To reconstruct an image, we simply follow the (logical) pointers in the corresponding \texttt{patch\_pointers} database table entry to retrieve the patches from the \texttt{patch\_dict} for each $(x,y)$ location in the image:
+
+\begin{algorithm}
+    \caption{Image reconstruction}
+    \label{alg:recon}
+\begin{algorithmic}[1]
+\State $PatchPointers \leftarrow $ \texttt{getAllPatchPointers($patch\_pointers$)}
+\State $PatchData \leftarrow $ \texttt{getAllPatches}($patch\_dict, PatchPointers$)
+\State $ResultImage \leftarrow []$
+\For{$P_{d}$ in $PatchData$}
+\State $ResultImage.set(P_{d}.x,P_{d}.y,P_{d}.patch)$
+\EndFor
+\vspace{3mm}
+\end{algorithmic}
+\end{algorithm}
+
+
+
