@@ -8,24 +8,29 @@ public class Constants {
     public static boolean BATCH_INSERT = false;
     public static boolean BATCH_RECONSTRUCT = false;
     public static int RANDOM_SAMPLE = 10;
-    public static boolean USE_PCA_HASH = false;
+    public static boolean USE_PCA_HASH = true;
+    public static boolean EXPLOIT_SELF_SIMILARITY = false;
+
+    public static boolean ENABLE_UNIFORM_PATCH_HASHING = true; //false;
 
 	private Vector<Double> maxDistance;
 	private int patchSize = 25;
 	private int smallSize = 500;
 	private String naiveHashVectorsFile = new String("../data/hash_vectors_rand25.txt");
-    private String pcaHashVectorsFile = null;
+    private String pcaHashVectorsFile = new String("../data/hash_vectors_pca25.txt");
+
     private static double likelyUniformIntensityThresh = 25.0;
+
 	private static double[] likelyUniformColorThresh = new double[]{12.0, 12.0, 12.0};
-    
+
     public static double getUniformIntensityThresh(){
     	return likelyUniformIntensityThresh;
     }
-    
-    public static double[] getUniformColorThresh(){
+
+    public static double[] getUniformColorThresh() {
     	return likelyUniformColorThresh ;
     }
-    
+
 	private LshHelper lshHelper_ = null;
 
 	private static Constants singleton = null;
@@ -98,6 +103,7 @@ public class Constants {
 	private LshHelper getInitLshHelper() {
 		if (lshHelper_ == null) {
             if (!USE_PCA_HASH) {
+            	SimpleTimer.timedLog("Using naive Hash\n");
                 lshHelper_ = new NaiveLshHelper(Constants.getNaiveHashVectorsFile());
             } else {
                 lshHelper_ = new PcaLshHelper(Constants.getPcaHashVectorsFile(), true);

@@ -110,9 +110,6 @@ public class DatabaseClient {
 		int imgId = insertImage(image, name == null ? "" : name);
 		timer.printDone();
 
-		List<PointerData> patchInfo = patchify(image, Constants.getPatchSize(), imgId,
-				false /* not mock */);
-		storePointers(patchInfo, imgId);
 
 		SimpleTimer.timedLog("Inserted image " + name + ", " + imgId + "\n");
 		return imgId;
@@ -282,6 +279,12 @@ public class DatabaseClient {
 		return res;
 	}
 
+	public void makeThumbnailsTable() throws SQLException{
+		PreparedStatement ps = conn.prepareStatement("CREATE TABLE images_as_thumbnails (id int PRIMARY KEY, imgname text, img bytea)");
+		ps.executeUpdate();
+		ps.close();
+	}
+
 	/**
 	 * Encapsulates code to get image data from some table by ID.
 	 *
@@ -371,14 +374,16 @@ public class DatabaseClient {
 		Set<Integer> hashes = dedup.getUniqueHashes();
 		SimpleTimer.timedLog("Hashes w/o self similarity: " + hashes.size() + "\n");
 
-		timer.start();
-		SimpleTimer.timedLog("Handling self-similarity... ");
-		dedup.handleSelfSimilarity();
-		hashes = dedup.getUniqueHashes();
-		timer.printDone();
-		SimpleTimer.timedLog("Hashes after self similarity: " + hashes.size() + "\n");
-
+        if (Constants.EXPLOIT_SELF_SIMILARITY) {
+            timer.start();
+            SimpleTimer.timedLog("Handling self-similarity... ");
+            dedup.handleSelfSimilarity();
+            hashes = dedup.getUniqueHashes();
+            timer.printDone();
+            SimpleTimer.timedLog("Hashes after self similarity: " + hashes.size() + "\n");
+        }
 		Map<Integer, List<PatchWrapper> > existingPatches = getExistingPatches(hashes);
+        //        SimpleTimer.timedLog("Hashes: " + hashes.toString() + "\n");
 
 		timer.start();
 		SimpleTimer.timedLog("Figuring out which patches to store... ");
@@ -726,13 +731,11 @@ public class DatabaseClient {
 		return result;
 
 	}
-	
-	
-	
+
+
+
 	public void getStdDevStats() throws SQLException, IOException {
 		PrintWriter pw = new PrintWriter("../data/stddev.txt");
-		
-		
 
 		int count = 0;
 		while (true){
@@ -740,14 +743,14 @@ public class DatabaseClient {
 			ps.setInt(1, count);
 			ResultSet rs = ps.executeQuery();
 			rs.next();
-			
-			
+
+
 
 				System.out.println(count);
 				System.out.println(rs.getInt(2));
 
-			
-			
+
+
 			BufferedImage img;
 			count++;
 
@@ -767,13 +770,13 @@ public class DatabaseClient {
 			pw.flush();
 		}
 		pw.close();
-		
-		
-		
+
+
+
 
 	}
-	
-	
+
+
 
 	public String getTableSize(String tableName) throws SQLException {
 		StringBuffer sb = new StringBuffer("SELECT pg_size_pretty(pg_relation_size('");
@@ -826,7 +829,7 @@ public class DatabaseClient {
 		return result;
 	}
 
-	private String getTableRows(String tableName) throws SQLException {
+	public String getTableRows(String tableName) throws SQLException {
 		StringBuffer sb = new StringBuffer("SELECT COUNT(*) FROM ");
 		sb.append(tableName);
 		PreparedStatement ps  = conn.prepareStatement(sb.toString());
@@ -835,6 +838,44 @@ public class DatabaseClient {
 		String value = rs.getString(1);
 		rs.close();
 		return value;
+	}
+
+	public int storeThumbnail(BufferedImage image, String name) throws SQLException, IOException {
+		SimpleTimer timer = new SimpleTimer();
+		SimpleTimer.timedLog("Scaling image... ");
+		image = ImageUtils.thumbnail(image);
+		timer.printDone();
+
+		timer.start();
+		SimpleTimer.timedLog("Inserting image... ");
+		int imgId = insertImageThumbnail(image, name == null ? "" : name);
+		timer.printDone();
+
+		List<PointerData> patchInfo = patchify(image, Constants.getPatchSize(), imgId,
+				false /* not mock */);
+		storePointers(patchInfo, imgId);
+
+		SimpleTimer.timedLog("Inserted image " + name + ", " + imgId + "\n");
+		return imgId;
+
+	}
+
+	private int insertImageThumbnail(BufferedImage image, String name) throws SQLException, IOException {
+		int id = getNextImageId();
+
+		// TODO: add warning if img with same name already exists
+
+		ByteArrayOutputStream os = new ByteArrayOutputStream();
+		ImageIO.write(image,"png", os);
+		InputStream fis = new ByteArrayInputStream(os.toByteArray());
+		PreparedStatement ps = conn.prepareStatement("INSERT INTO images_as_thumbnails VALUES (?, ?, ?)");
+		ps.setInt(1, id);
+		ps.setString(2, name);
+		ps.setBinaryStream(3, fis, (int)os.toByteArray().length);
+		ps.executeUpdate();
+		ps.close();
+		fis.close();
+		return id;
 	}
 
 

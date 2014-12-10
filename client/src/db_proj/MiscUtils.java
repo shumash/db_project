@@ -1,6 +1,7 @@
 package db_proj;
 
 import java.io.*;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.List;
@@ -10,37 +11,37 @@ public class MiscUtils {
 	static public void listFilesForFolder(final File folder, ArrayList<String> files) {
         listFilesForFolder(folder, files, "");
 	}
-	
+
 	public static double[] mean(Vector<int[]> intensities){
 		double[] mean = new double[3];
-		
+
 		for (int[] intensity : intensities){
 			mean[0] += intensity[0];
 			mean[1] += intensity[1];
 			mean[2] += intensity[2];
 		}
-		
+
 		mean[0] /= intensities.size();
 		mean[1] /= intensities.size();
 		mean[2] /= intensities.size();
-		
+
 		return mean;
 	}
-	
+
 	public static double[] stdDev(Vector<int[]> intensities){
 		double[] mu = MiscUtils.mean(intensities);
-		
+
 		double[] sigma = new double[3];
 		for (int[] intensity : intensities){
 			sigma[0] += (intensity[0] - mu[0])* (intensity[0] - mu[0]);
 			sigma[1] += (intensity[1] - mu[1])* (intensity[1] - mu[1]);
 			sigma[2] += (intensity[2] - mu[2])* (intensity[2] - mu[2]);
 		}
-		
+
 		sigma[0] /= intensities.size();
 		sigma[1] /= intensities.size();
 		sigma[2] /= intensities.size();
-		
+
 		sigma[0] = Math.sqrt(sigma[0]);
 		sigma[1] = Math.sqrt(sigma[1]);
 		sigma[2] = Math.sqrt(sigma[2]);
@@ -153,5 +154,14 @@ public class MiscUtils {
             sum += d;
         }
         return sum/p.size();
+    }
+
+    public static String formatDouble(double d) {
+    	DecimalFormat formatter = new java.text.DecimalFormat("00.##");
+    	return formatter.format(d);
+        //if(d == (long) d)
+          //  return String.format("%d",(long)d);
+        //else
+          //  return String.format("%2.0f", d);
     }
 }

@@ -26,7 +26,7 @@ abstract public class LshHelper {
 		System.out.println("Reading " + lines.size() + " hash vectors");
 		input.close();
 
-		projVectors = new double[lines.size()][Constants.getPatchSize() * Constants.getPatchSize() * 3];
+		projVectors = new double[lines.size()][expectedSize];
 		for (int i = 0; i < lines.size(); ++i) {
 			int col_num = 0;
 		    Scanner colReader = new Scanner(lines.get(i));

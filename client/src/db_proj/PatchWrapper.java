@@ -4,10 +4,12 @@ import java.awt.image.BufferedImage;
 
 public class PatchWrapper {
 	private BufferedImage img = null;
-	private double[] imgVector = null;
+	private double[] imgVector = null;  // LUV
 	private Integer id = null;
 	private int[] hashes = null;
 	private Integer singleHash = null;
+    private Boolean isUni = null;
+    private ImageColorStats imgStats = null;
 
 	PatchWrapper(BufferedImage inImg) {
 		img = inImg;
@@ -20,6 +22,20 @@ public class PatchWrapper {
 	public BufferedImage getImg() {
 		return img;
 	}
+
+    public ImageColorStats getStats() {
+        if (imgStats == null) {
+            imgStats = new ImageColorStats(getImgVector());
+        }
+        return imgStats;
+    }
+
+    public Boolean isUniform() {
+        if (isUni == null) {
+            isUni = getStats().isUniform();
+        }
+        return isUni;
+    }
 
 	public double[] getImgVector() {
 		if (imgVector == null) {
@@ -45,7 +61,12 @@ public class PatchWrapper {
 
 	public Integer getSingleHash() {
 		if (singleHash == null) {
-			singleHash = Constants.lshHelper().computeSingleIntegerHash(getHashes());
+            if (Constants.ENABLE_UNIFORM_PATCH_HASHING &&
+                getStats().isUniform()) {
+                singleHash = getStats().getMean().qunatize();
+            } else {
+                singleHash = Constants.lshHelper().computeSingleIntegerHash(getHashes());
+            }
 		}
 		return singleHash;
 	}
