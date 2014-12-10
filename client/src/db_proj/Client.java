@@ -308,7 +308,7 @@ public class Client {
 
 
 				// HACK
-				String uploadLogFile = new String("/tmp/upload_log");
+				String uploadLogFile = new String("/tmp/upload_log_PCA_U");
 				SimpleTimer.timedLog("Writing upload log to file: " + uploadLogFile + "\n");
 				PrintStream orig_stdout = System.out;
 				orig_stdout.flush();

@@ -182,12 +182,6 @@ public class ImageUtils {
 		return retVector;
 	}
 
-
-	public class ImgStats {
-		double[] mean = null;
-		double[] stdev = null;
-	}
-
     public static BufferedImage scaleCrop(BufferedImage image) {
     	// Step 1: crop
     	int min_dim = Math.min(image.getHeight(), image.getWidth());
@@ -221,7 +215,7 @@ public class ImageUtils {
 		for (int i = 0; i < horPatches; i++) {
 			for (int j = 0; j < vertPatches; j++) {
 				int randomNum = rand.nextInt(1000);
-				if (randomNum % 10 == 0) {
+				if (randomNum % 5 == 0) {
 					BufferedImage patch = image.getSubimage(i * pSize,
 							j * pSize,
 							pSize,
@@ -236,23 +230,7 @@ public class ImageUtils {
     public static double[] getImgVector(BufferedImage img) {
         return  ImageUtils.toLuv(ImageUtils.toRgbVector(img));
     }
-    
-    
-    public static boolean isLikelyUniformColor(BufferedImage img){
-    	Vector<int[]> intensities = new Vector<int[]>();
-    	for(int i = 0; i < img.getHeight(); i++){
-		    for(int j = 0; j < img.getWidth(); j++){
-		       int[] data = ImageUtils.getPixelData(img, j, i);
-		       intensities.add(data);
-		    }
-		}
-    	
-		double[] sigma = MiscUtils.stdDev(intensities);
-		
-		double[] thresh = Constants.getUniformColorThresh();
-		return sigma[0] < thresh[0] && sigma[1] < thresh[1] && sigma[2] < thresh[2];
-    }
-	
+
 	public static int[] getPixelData(BufferedImage img, int x, int y) {
 		int argb = img.getRGB(x, y);
 
@@ -274,6 +252,4 @@ public class ImageUtils {
 		g.dispose();
         return newImage;
 	}
-    
-    
 }

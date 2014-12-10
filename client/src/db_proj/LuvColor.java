@@ -5,11 +5,11 @@ import java.awt.Color;
 // u* and v* range ±100. By definition, 0 ≤ L* ≤ 100.
 public class LuvColor {
 	// Reference: http://www.easyrgb.com/index.php?X=MATH&H=02#text2
-	
+
 	private double L = 0;
 	private double U = 0;
 	private double V = 0;
-	
+
 	public LuvColor(Color color) {
 		double xyz[] = toXYZ(color.getRed(), color.getGreen(), color.getBlue());
 		//System.out.println("xyz = "+ xyz[0] + "," + xyz[1] + "," + xyz[2]);
@@ -18,13 +18,33 @@ public class LuvColor {
 		U = luv[1];
 		V = luv[2];
 	}
-	
+
 	public LuvColor(double inL, double inU, double inV) {
 		L = inL;
 		U = inU;
 		V = inV;
 	}
-	
+
+	public int qunatize() {
+        int[] quantized = {
+            (int) // L: 0-100
+            Math.floor(L / 15.0),  // 0-6: 3 bits
+            (int) // u: -120 - 120
+            Math.floor(Math.min(Math.max(0, U + 120), 240) / 24.0), //0-10: 4 bits
+            (int) // v: -120 - 120
+            Math.floor(Math.min(Math.max(0, V + 120), 240) / 24.0)}; //0-10: 4 bits
+
+        int result = 0;
+        result += quantized[0];
+        result <<= 4;
+        result += quantized[1];
+        result <<= 4;
+        result += quantized[2];
+
+        SimpleTimer.timedLog("\n Qunatized (" + L + ", " + U + ", " + V + ") as " + result + "\n");
+        return -result;  // to distinguish from other hashes
+    }
+
 	public double getL() {
 		return L;
 	}
@@ -36,7 +56,7 @@ public class LuvColor {
 	public double getV() {
 		return V;
 	}
-	
+
 	public String toString() {
 		return "L: " + L + ", U: " + U + ", V: " + V;
 	}
@@ -67,11 +87,11 @@ public class LuvColor {
 		res[2] = Z;
 		return res;
 	}
-	
+
 	static public double[] toLuv(double [] xyz) {
 		return toLuv(xyz[0], xyz[1], xyz[2]);
 	}
-	
+
 	static public double[] toLuv(double X, double Y, double Z) {
 		double var_U = ( 4 * X ) / ( X + ( 15 * Y ) + ( 3 * Z ) );
 		double var_V = ( 9 * Y ) / ( X + ( 15 * Y ) + ( 3 * Z ) );

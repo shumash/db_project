@@ -18,15 +18,17 @@ import javax.imageio.ImageIO;
 public class Experimental {
 
 	public static DatabaseClient establishConnection() {
+		return establishConnection("imgtest");
+	}
+
+	public static DatabaseClient establishConnection(String dbName) {
 		DbConnectionInfo info = new DbConnectionInfo();
-		info.setLocalUrl("imgtest");
+		info.setLocalUrl(dbName);
 		info.setUserInfo("shumash", null);
 		DatabaseClient dbc = new DatabaseClient();
 		dbc.connect(info);
 		return dbc;
 	}
-
-
 
 	/**
 	 * @param args
@@ -37,8 +39,33 @@ public class Experimental {
         //MockInsertImage();
         //DebugLoadImagesFromUrls();
 		//DumpPatchVectorsToFile();
-        ComputeDotProductDistributions();
+        //ComputeDotProductDistributions();
+		//ExplorePatchUniformity();
+        //SampleImagesForQualEval("img_pca_nn");
     }
+
+	public static void SampleImagesForQualEval(String dbName) throws SQLException, IOException {
+        DatabaseClient dbc = establishConnection(dbName);
+
+		String outputFolder = "/tmp/subj_eval/" + dbName;
+
+        Random rand = new Random();
+        int count = 0;
+
+        while (count < 100) {
+            int imId = rand.nextInt(dbc.getImageTableSize() - 1) + 1;
+
+            String filenameOrig = outputFolder + "/" + count + "_orig_" + imId + ".jpg";
+            String filenameRecon = outputFolder + "/" + count + "_rec_" + imId + ".jpg";
+
+            BufferedImage orig = dbc.getImageOriginal(imId);
+            BufferedImage reco = dbc.getImageReconstructed(imId);
+            ImageUtils.saveImage(orig, filenameOrig);
+            ImageUtils.saveImage(reco, filenameRecon);
+            SimpleTimer.timedLog("Saved image: " + imId);
+            ++count;
+        }
+	}
 
 	public static void MockInsertImage() throws IOException, SQLException {
 		DatabaseClient dbc = establishConnection();
@@ -65,6 +92,55 @@ public class Experimental {
         img = ImageUtils.loadImage("../tiny_data/star.jpg");
         scaled = ImageUtils.scaleCrop(img);
         ImageUtils.saveImage(scaled, "/tmp/scaled_tiny.jpg");
+    }
+
+    public static void ExplorePatchUniformity() throws IOException {
+        // Inputs
+        String folder = "../../../imgdata/IMG/tst";
+
+        // Outputs
+        String outDir = "/tmp/uni7/";
+
+        Random rand = new Random();
+        ArrayList<String> files = new ArrayList<String>();
+        MiscUtils.listFilesForFolder(new File(folder), files);
+        int uni = 0;
+        int nonUni = 0;
+        for (String filename : files) {
+            String full_file = folder + "/" + filename;
+            System.out.println("Reading file: " + full_file);
+            BufferedImage img = ImageUtils.scaleCrop(ImageUtils.loadImage(full_file));
+            List<BufferedImage> patches = ImageUtils.getSamplePatches(
+                img, Constants.getPatchSize(), rand);
+            for (BufferedImage patch_img : patches) {
+                PatchWrapper pw = new PatchWrapper(patch_img);
+                ImageColorStats stats = new ImageColorStats(pw.getImgVector());
+
+            	String outFile =
+                        outDir;
+                   //    MiscUtils.formatDouble(stats.pNorm[0]) + "_" +
+                 //MiscUtils.formatDouble(stats.pNorm[1]) + "_" +
+                 //MiscUtils.formatDouble(stats.pNorm[2]) + "_" +
+                 //MiscUtils.formatDouble(stats.mean[0]) + "_" +
+                 //MiscUtils.formatDouble(stats.mean[1]) + "_" +
+                 //MiscUtils.formatDouble(stats.mean[2]) + "_";
+            	if (stats.isUniform()) {//ImageColorStats.isLikelyUniformColor(patch_img)) {
+            		++uni;
+            		outFile = outFile + "uni";// + uni + ".jpg";
+            	} else {
+            		++nonUni;
+            		outFile = outFile + "nonuni";// + nonUni + ".jpg";
+            	}
+            	outFile = outFile + "_" +
+            	 MiscUtils.formatDouble(stats.pNorm[0]) + "_" +
+                 MiscUtils.formatDouble(stats.pNorm[1]) + "_" +
+                 MiscUtils.formatDouble(stats.pNorm[2]) + "_" +
+                 MiscUtils.formatDouble(stats.mean[0]) + "_" +
+                 MiscUtils.formatDouble(stats.mean[1]) + "_" +
+                 MiscUtils.formatDouble(stats.mean[2]) + ".jpg";
+            	ImageUtils.saveImage(patch_img, outFile);
+            }
+        }
     }
 
     public static void ComputeDotProductDistributions() throws IOException {

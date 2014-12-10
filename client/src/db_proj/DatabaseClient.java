@@ -278,7 +278,7 @@ public class DatabaseClient {
 		}
 		return res;
 	}
-	
+
 	public void makeThumbnailsTable() throws SQLException{
 		PreparedStatement ps = conn.prepareStatement("CREATE TABLE images_as_thumbnails (id int PRIMARY KEY, imgname text, img bytea)");
 		ps.executeUpdate();
@@ -731,13 +731,11 @@ public class DatabaseClient {
 		return result;
 
 	}
-	
-	
-	
+
+
+
 	public void getStdDevStats() throws SQLException, IOException {
 		PrintWriter pw = new PrintWriter("../data/stddev.txt");
-		
-		
 
 		int count = 0;
 		while (true){
@@ -745,14 +743,14 @@ public class DatabaseClient {
 			ps.setInt(1, count);
 			ResultSet rs = ps.executeQuery();
 			rs.next();
-			
-			
+
+
 
 				System.out.println(count);
 				System.out.println(rs.getInt(2));
 
-			
-			
+
+
 			BufferedImage img;
 			count++;
 
@@ -772,13 +770,13 @@ public class DatabaseClient {
 			pw.flush();
 		}
 		pw.close();
-		
-		
-		
+
+
+
 
 	}
-	
-	
+
+
 
 	public String getTableSize(String tableName) throws SQLException {
 		StringBuffer sb = new StringBuffer("SELECT pg_size_pretty(pg_relation_size('");
@@ -831,7 +829,7 @@ public class DatabaseClient {
 		return result;
 	}
 
-	private String getTableRows(String tableName) throws SQLException {
+	public String getTableRows(String tableName) throws SQLException {
 		StringBuffer sb = new StringBuffer("SELECT COUNT(*) FROM ");
 		sb.append(tableName);
 		PreparedStatement ps  = conn.prepareStatement(sb.toString());
@@ -859,7 +857,7 @@ public class DatabaseClient {
 
 		SimpleTimer.timedLog("Inserted image " + name + ", " + imgId + "\n");
 		return imgId;
-		
+
 	}
 
 	private int insertImageThumbnail(BufferedImage image, String name) throws SQLException, IOException {

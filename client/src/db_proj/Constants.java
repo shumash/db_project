@@ -8,8 +8,10 @@ public class Constants {
     public static boolean BATCH_INSERT = false;
     public static boolean BATCH_RECONSTRUCT = false;
     public static int RANDOM_SAMPLE = 10;
-    public static boolean USE_PCA_HASH = false; //true;
+    public static boolean USE_PCA_HASH = true;
     public static boolean EXPLOIT_SELF_SIMILARITY = false;
+
+    public static boolean ENABLE_UNIFORM_PATCH_HASHING = true; //false;
 
 	private Vector<Double> maxDistance;
 	private int patchSize = 25;
