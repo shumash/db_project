@@ -34,9 +34,9 @@ There will always be a trade-off between compression benefits (storage: patch di
 
 %TODO(Zoya,Andrew): tradeoffs for patch size
 
-\begin{edit}
-(written by Andy): I think this should be moved earlier, after which the analysis is added.  Maybe we should add some stuff on the "quality gains" and add a plot for that, but there's not much we can probably do until later.
-\end{edit}
+%\begin{edit}
+%(written by Andy): I think this should be moved earlier, after which the analysis is added.  Maybe we should add some stuff on the "quality gains" and add a plot for that, but there's not much we can probably do until later.
+%\end{edit}
 
 At larger patch granularities, each patch contains more image structure, and thus the probability that another patch contains the same or similar image content decreases with the number of pixels in a patch. At larger granularities it becomes increasingly harder to find matching patches in the patch dictionary, and the closest matching patches for textured regions might introduce artifacts (see fig.\ref{fig:patchsize}). At the same time, patches that are too small do not offer as efficient a compression strategy. We must balance the costs of storing pointers to patches for each image in our database, as well as all the patches themselves, against the costs of storing the images in their original form. This calculation is investigated further below. 
 

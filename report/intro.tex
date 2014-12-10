@@ -25,12 +25,13 @@ the database versus image quality.
 The goal of this paper is as much to produce a working system as to
 build up the analytical foundations that allow making these tradeoffs.
 
-In Section~\ref{sec:method}, we explain our method of ``patchifying'' images,
-storing them in a database, and reconstructing stored images. We also
-discuss image distance metrics, hashing schemes and indices in this core section.
-In Section~\ref{sec:analysis}, we provide the analytical groundwork for
+Section \ref{sec:related} covers some related work on image compression, raster databases, and patch-based computer vision applications.
+In section~\ref{sec:method}, we explain our method of ``patchifying'' images,
+storing them in a database, and reconstructing stored images. 
+In section \ref{sec:nn} we discuss how we accomplish the fast retrieval of similar patches via locality-sensitive-hashing, which is crucial to the feasibility of our system. In section \ref{sec:opt} we discuss other important database optimizations required for performance. 
+In section~\ref{sec:analysis}, we provide the analytical groundwork for
 selecting optimal image patch sizes, distance thresholds, and quality metrics
-appropriate for evaluation. Finally, in Section~\ref{sec:performance}
-we evaluate our system on real data, using analytical tools from the previous section.
-In addition, in Section~\ref{sec:apps}, we briefly touch on applications that derive naturally
-from a patch database, including similar image retrieval and duplicate detection.
+appropriate for evaluation. Finally, in section~\ref{sec:performance}
+we evaluate our full working system on real data, using the analytical tools developed from the previous section. 
+In addition, in section~\ref{sec:conclusion}, we briefly touch on applications that derive naturally
+from a patch database, including similar image retrieval and duplicate detection, as well as a fun photomosaic application. We conclude by discussing future extensions.
