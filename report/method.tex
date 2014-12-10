@@ -147,12 +147,21 @@ refer to the left top corner location of each patch in the image.
 
 \subsection{Image Reconstruction}\label{sec:reconst}
 
-In order to reconstruct images quickly, we
-\begin{edit}
-complete this section\\
-Ask wei for sample sql queries and pseudocode
-\end{edit}
+To reconstruct an image, we simply follow the (logical) pointers in the corresponding \texttt{patch\_pointers} database table entry to retrieve the patches from the \texttt{patch\_dict} for each $(x,y)$ location in the image:
 
+\begin{algorithm}
+    \caption{Image reconstruction}
+    \label{alg:recon}
+\begin{algorithmic}[1]
+\State $PatchPointers \leftarrow $ \texttt{getAllPatchPointers($patch\_pointers$)}
+\State $PatchData \leftarrow $ \texttt{getAllPatches}($patch\_dict, PatchPointers$)
+\State $ResultImage \leftarrow []$
+\For{$P_{d}$ in $PatchData$}
+\State $ResultImage.set(P_{d}.x,P_{d}.y,P_{d}.patch)$
+\EndFor
+\vspace{3mm}
+\end{algorithmic}
+\end{algorithm}
 
 
 
