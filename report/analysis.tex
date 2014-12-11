@@ -9,16 +9,16 @@ There will always be a trade-off between compression benefits (storage: patch di
  \begin{figure}
 %\hspace{-25mm}
 \centering
-(a) \includegraphics[width=0.9\linewidth]{Figures/184.png}
-(b) \includegraphics[width=0.4\linewidth]{Figures/184.png}
-\caption{For demonstration purposes only, we choose a large patch size and low distance threshold. (a) Under these parameters, the original image is reconstructed to take up only $40\%$ of its original size (in pixels). The $60\%$ of the patches that have been replaced come either from the same image ($46\%$ of them), or from other images (the remaining $64\%$). (b) Notice that when the size of the image and its reconstruction are halved, the artifacts already become visually insignificant, and would not impair a scene recognition or search task. }
+\includegraphics[width=0.7\linewidth]{Figures/184.png}
+\includegraphics[width=0.3\linewidth]{Figures/184.png}
+\caption{For demonstration purposes only, we choose a large patch size and low distance threshold. Under these parameters, the original image is reconstructed to take up only $40\%$ of its original size (in pixels). The $60\%$ of the patches that have been replaced come either from the same image ($46\%$ of them), or from other images (the remaining $64\%$). Notice that when the size of the image and its reconstruction are halved, the artifacts already become visually insignificant, and would not impair a scene recognition or search task. }
 \label{fig:badrecon}
 \end{figure}
 
  \begin{figure}
 %\hspace{-25mm}
 \centering
-\includegraphics[width=0.9\linewidth]{Figures/184_25.png}
+\includegraphics[width=0.7\linewidth]{Figures/184_25.png}
 \caption{Compare this image reconstruction, computed with a dictionary of $25\times 25$ pixel patches with the reconstruction in fig.\ref{fig:badrecon}, computed with $50\times 50$ patches. In both cases, a similar threshold is used (scaled to the patch size, as discussed in sec. \ref{sec:simthresh}) but the visual artifacts are less noticeable because smaller patches have less contained structure, and are more likely to be homogenous in appearance.}
 \label{fig:patchsize}
 \end{figure}
@@ -83,9 +83,9 @@ A patch dictionary can be built up incrementally, adding new patches as new imag
 
  \begin{figure}
 %\hspace{-25mm}
-%\centering
-\includegraphics[width=0.9\linewidth]{Figures/009.png}
-\includegraphics[width=0.9\linewidth]{Figures/014.png}
+\centering
+\includegraphics[width=0.7\linewidth]{Figures/009.png}
+\includegraphics[width=0.7\linewidth]{Figures/014.png}
 \caption{Example of a biased patch dictionary construction strategy, leading to non-uniformity in image reconstruction quality. Images added to the database earlier (top row) are better reconstructed (due to more patch samples in the database) than images added later (bottom row), constrained to be constructed out of patches added initially. The sky pixels in the image added later are borrowed from sky pixels of other images ($44\%$ of the pixels in this image come from other images, compared to only $11\%$ in the image on the first row). Note: here we use a very high patch distance threshold and large patch size for demonstration purposes only, to emphasize the artifacts created.}
 \label{fig:sampStrategy}
 \end{figure}
@@ -130,9 +130,9 @@ In the final column of fig. \ref{fig:perfGraphs}, we see a sample image reconstr
 
  \begin{figure}
 %\hspace{-25mm}
-%\centering
-(a)\includegraphics[width=0.9\linewidth]{Figures/197.png}
-(b)\includegraphics[width=0.9\linewidth]{Figures/197_bw.png}
+\centering
+(a)\includegraphics[width=0.7\linewidth]{Figures/197.png}
+(b)\includegraphics[width=0.7\linewidth]{Figures/197_bw.png}
 \caption{This is what happens when we do not separately constrain each of the color channels to match. We have patches that are (a) the wrong color and produce visible visual artifacts, while (b) matching in terms of general hue (average of the color channels). Again, the patch size and distance threshold were chosen to emphasize the artifacts.}
 \label{fig:colProblem}
 \end{figure}

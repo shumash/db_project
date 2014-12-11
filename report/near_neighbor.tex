@@ -22,7 +22,6 @@ particular application.
 \includegraphics[width=3.0in]{fig_NN/lsh_tables.png}}
 \subfigure[Random projection hashing family $\mathcal{F}$.]{
 \includegraphics[width=2.5in]{fig_NN/rand_proj.png}}
-\label{fig:lsh}
 \caption{a) LSH typically constructs
 $L$ hash tables, each relying on an amplified
 hash function $\mathcal{G}$, composed of a concatenation
@@ -31,6 +30,7 @@ random projection hashing, each
 $\mathcal{F}$ is evaluated by projecting a point $p$
 (a patch color vector in our case) on a randomly chosen
 unit vector, and binning it into uniform bins.}
+\label{fig:lsh}
 \end{figure}
 
 Locality-Sensitive Hashing (LSH)~\cite{LSH:Andoni}
@@ -177,9 +177,9 @@ we adapt the bin size to $\mu_i$ and $\sigma_i$.
 
 \begin{figure}[ht!]
 \includegraphics[width=3.0in]{fig_NN/principal_comps.png}
-\label{fig:lambdas}
 \caption{Eigenvalues of the PCA on 80K patches and visualization
 of the L-channel (lightness) of the first 10 components.}
+\label{fig:lambdas}
 \end{figure}
 
 In our experimental setup we sampled patches from two distinct

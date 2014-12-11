@@ -1,7 +1,7 @@
 
 \section{Qualitative Evaluation}\label{sec:qual}
 
-For the qualitative evaluation, 3 of the paper's authors independently rated 100 randomly-selected image reconstructions from each of the three nearest neighbor methods described in sec. \ref{sec:nn}: \emph{naive}, \emph{pca}, and \emph{pca+u} (all 3 raters received the same set of images). The following rating scheme was used:
+For the qualitative evaluation, 3 of the paper's authors independently rated 100 randomly-selected image reconstructions from each of the three nearest neighbor methods described in sec. \ref{sec:nn}: \emph{naive}, \emph{pca}, and \emph{pca+u} (all 3 raters received the same set of images). Table{tab:rankings} outlines the rating scheme used.
 
 \begin{table}
 \begin{tabular}{| l | l|}
@@ -14,7 +14,7 @@ For the qualitative evaluation, 3 of the paper's authors independently rated 100
 1 & severe distortions, scene is not recognizable  \\ \hline
 \end{tabular}
 \caption{The quality evaluation scheme used.}
-\label{tb:rankings}
+\label{tabb:rankings}
 \end{table}
 
 None of the raters received any instructions other than the rating scheme, and the evaluation was not further discussed. Nevertheless, all the raters were highly correlated with each other, where the inter-rater correlation ranged from 0.71 to 0.75 on the \emph{naive} images, 0.51 to 0.61 on the \emph{pca} images, and 0.59 to 0.64 on the \emph{pca+u} images. In figure \ref{fig:qual_method}a we plot the mean and standard error image rating for each rater and each NN method. We see some differences between the raters, but most notably, the \emph{pca} approach was rated highest across all 3 raters, and when taking the average ratings (over all 3 raters), the reconstruction quality is statistically significantly better rated for the \emph{pca} method over the \emph{naive} method. 

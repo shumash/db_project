@@ -11,31 +11,29 @@ hashing strategies for Near Neighbor(NN) search:\\
 \begin{enumerate}
 \item \textbf{Naive NN}: 10 random projection vectors sampled from unit Normal with
 uniform bin size (outliers truncated)
-\item \textbf{PCA NN}: 10 first principla components as projection vectors with
+\item \textbf{PCA NN}: 10 first principal components as projection vectors with
 bin size adapted to the distribution of projections
 \item \textbf{PCA + U NN}: nearly uniform patches are hashed using Luv color
 quantization into 864 bins, and non-uniform patches are handled with PCA NN
 \end{enumerate}
-We compare and contrast the effects of hashing on performance in
-Sec.~\ref{ssec:nn-eval}, and detail a qualitative evaluation of
-the results with a user study in sec.~\ref{sec:qual}.
-
+We detail a qualitative evaluation of the results with a user study in sec.~\ref{sec:qual}.
 Here we consider the quantitative performance of our system as we grow our database to 10K images.
-In fig.~\ref{fig:dict_growth} we see that as for the smaller tests in sec.~\ref{sec:analysis}, the growth of our patch dictionary is sub-linear, demonstrating increasing compression benefits as more images are added to the database. We show that this trend holds for all 3 of our NN methods (\emph{naive}, \emph{pca}, and \emph{pca+u}). Note that the \emph{naive} NN approach became infeasible as the dictionary grew, as can be demonstrated by the time required to upload each successive image into the database (see fig.~\ref{fig:upload_times}). Due to this behavior, it was terminated early. We see that the two approaches using the \emph{pca} NN scheme have significantly better time performance. This is because in the \emph{naive} approach, most of the data falls in relatively few bins. Making use of \emph{pca} helps by projecting data onto the directions of maximal variance, which helps to differentiate between patches, and thus redistribute them across multiple bins. Table \ref{tab:nn-res} includes a breakdown of the number of patches and bins produced in each of the NN approaches, as well as the timings to insert images. Also, because the \emph{naive} approach has fewer bins, it is easier to find a matching patch in a bin, and thus new patches are less frequently added to the dictionary. This explains the gap we see between the red and green/blue curves in fig.~\ref{fig:dict_growth}. Another way to look at this is to consider the average number of patches added per image (see fig.~\ref{fig:ave_patches_per_img}). As more and more images are added to the database, fewer patches are added to the dictionary. We can more clearly see the gap between the red and green/blue curves in this plot. Even though we do not see the dictionary size plateauing even for our 10K image database, the trends in fig.~\ref{fig:ave_patches_per_img} are promising, and show a decline in the number of patches being added. We believe that much bigger datasets should be investigated in future work to really see the plateau effect and gain the full benefits of our patch-based compression system. Note, however, that even personal image collections are often bigger than 10K images, so this is not an unreasonable requirement.
+In fig.~\ref{fig:dict_growth} we see that as for the smaller tests in sec.~\ref{sec:analysis}, the growth of our patch dictionary is sub-linear, demonstrating increasing compression benefits as more images are added to the database. We show that this trend holds for all 3 of our NN methods (\emph{naive}, \emph{pca}, and \emph{pca+u}). Note that the \emph{naive} NN approach became infeasible as the dictionary grew, as can be demonstrated by the time required to upload each successive image into the database (see fig.~\ref{fig:upload_times}). Due to this behavior, it was terminated early. We see that the two approaches using the \emph{pca} NN scheme have significantly better time performance. This is because in the \emph{naive} approach, most of the data falls in relatively few bins. Making use of \emph{pca} helps by projecting data onto the directions of maximal variance, which helps to differentiate between patches, and thus redistribute them across multiple bins. Table \ref{tab:nn-res} includes a breakdown of the number of patches and bins produced in each of the NN approaches, as well as the timings to insert images. Figure \ref{fig:bin_cover} demonstrates that in the \emph{naive} approach, the percent of patches that fall into the first bin already exceeds $50\%$, and over $70\%$ of the dictionary's patches are accounted for by the third bin. This explains why the \emph{naive} approach takes such a long time to run: it must go through a very big number of patches to determine whether to add new patches from an inserted image. Because the \emph{naive} approach has fewer bins, it is also easier to find a matching patch in a bin, and thus new patches are less frequently added to the dictionary, leading to higher compression ratios using this approach. This explains the gap we see between the red and green/blue curves in fig.~\ref{fig:dict_growth}a. Another way to look at this is to consider the average number of patches added per image (see fig.~\ref{fig:dict_growth}b). As more and more images are added to the database, fewer patches are added to the dictionary. We can more clearly see the gap between the red and green/blue curves in this plot. Even though we do not see the dictionary size plateauing even for our 10K image database, the trends in fig.~\ref{fig:dict_growth}b are promising, and show a decline in the number of patches being added. We believe that much bigger datasets should be investigated in future work to really see the plateau effect and gain the full benefits of our patch-based compression system. Note, however, that even personal image collections are often bigger than 10K images, so this is not an unreasonable requirement.
 
- \begin{figure}
-%\hspace{-5mm}
-%\centering
-\includegraphics[width=1\linewidth]{fig_NN/dict_growth.jpg}
-\caption{}
+ \begin{figure*}
+\hspace{-10mm}
+\centering
+(a)\includegraphics[width=0.44\linewidth]{fig_NN/dict_growth.jpg}
+(b)\includegraphics[width=0.44\linewidth]{fig_NN/ave_patches_per_img.jpg}
+\caption{(a) As dataset size (the number of images stored in our database) increases, compression benefits increase. The dictionary size is likely to plateau for even larger databases. (b) As dataset size increases, the average number of patches added for each new image decreases. This demonstrates that we are effectively making use of patch redundancy across images. In both plots, the red line corresponds to the \textcolor{red}{\emph{naive} NN approach}, the blue to the \textcolor{blue}{\emph{pca} NN approach}, and the green to the \textcolor{green}{\emph{pca+u} NN approach}. We can see that the naive approach obtains better compression, but at a high timing cost, as depicted in fig.~\ref{fig:upload_times} and explained further in fig.~\ref{fig:bin_cover}. The pca-based approaches allow our system to be feasible.}
 \label{fig:dict_growth}
-\end{figure}
+\end{figure*}
 
  \begin{figure}
-%\hspace{-5mm}
+\hspace{-10mm}
 %\centering
-\includegraphics[width=1\linewidth]{Figures/upload_times.png}
-\caption{}
+\includegraphics[width=1.2\linewidth]{Figures/upload_times.png}
+\caption{As more images are added to the database, more patches are available in the dictionary. Thus, it is expected that we will need to look through more of the patches in order to determine if a matching patch already exists or if a new one should be added. The time to insert becomes infeasible in the case of the \emph{naive} approach because many patches end up in the first few bins (see fig.~\ref{fig:bin_cover}) requiring a linear search through all of them. The pca-based approaches allow patches to be more evenly distributed across bins which reduces the look-up time during insertion (fewer patches to examine in any given bin). Note: the weird behavior at the end of the green curve is an artifact of another process coming online at the same time as the database insertion procedure was run.}
 \label{fig:upload_times}
 \end{figure}
 
@@ -43,16 +41,8 @@ In fig.~\ref{fig:dict_growth} we see that as for the smaller tests in sec.~\ref{
 %\hspace{-5mm}
 %\centering
 \includegraphics[width=1\linewidth]{fig_NN/bin_cover.jpg}
-\caption{}
+\caption{Most of the patches hash to the first few bins in \emph{naive} NN approach, which explains why this approach takes a very long time to insert new images into the database. The pca-based methods end up with fewer patches per bin, which is crucial to making our whole pipeline feasible.}
 \label{fig:bin_cover}
-\end{figure}
-
- \begin{figure}
-%\hspace{-5mm}
-%\centering
-\includegraphics[width=1\linewidth]{fig_NN/ave_patches_per_img.jpg}
-\caption{}
-\label{fig:ave_patches_per_img}
 \end{figure}
 
 % Table
