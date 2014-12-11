@@ -73,21 +73,21 @@ in a lazy fashion - only when requested. Given our unoptimized Java
 implementation of image vectorization and dot product,
 we found these measures to yield a non-negligible speed-up.
 
-\subsection{Exploiting Self-Similarity}
+%% \subsection{Exploiting Self-Similarity}
 
-\begin{edit}
-TODO: shumash will rewrite this
+%% \begin{edit}
+%% TODO: shumash will rewrite this
 
-The idea of this algorithm is to do a local filtering among the patches of a single image before we query the database, such that the set of patches will only contain patches that are already greater than $T$ distance away from each other.  Let's call the filtered set the \emph{unique patches}. Then we query the database to find the set of likely to be similar patches to each of the unique patches. Only if none of the likely-to-be similar patches in the database matches a patch from the unique patches, do we insert this patch.
+%% The idea of this algorithm is to do a local filtering among the patches of a single image before we query the database, such that the set of patches will only contain patches that are already greater than $T$ distance away from each other.  Let's call the filtered set the \emph{unique patches}. Then we query the database to find the set of likely to be similar patches to each of the unique patches. Only if none of the likely-to-be similar patches in the database matches a patch from the unique patches, do we insert this patch.
 
-As discussed in [TODO], it is possible for similar patches to end up in
-different hash bins. Therefore, even if two patches $p_1$ and $p_2$
-from a new image are similar to each other, they may return
-different bin numbers. To minimize the number of queries to the database,
-we have experimented with exploiting self-similar
+%% As discussed in [TODO], it is possible for similar patches to end up in
+%% different hash bins. Therefore, even if two patches $p_1$ and $p_2$
+%% from a new image are similar to each other, they may return
+%% different bin numbers. To minimize the number of queries to the database,
+%% we have experimented with exploiting self-similar
 
 
- In general,
-this is fine, but in the case of Naive Near Neighbor search, where bins can
-contain a lot of elements, each additional
-\end{edit}
+%%  In general,
+%% this is fine, but in the case of Naive Near Neighbor search, where bins can
+%% contain a lot of elements, each additional
+%% \end{edit}
