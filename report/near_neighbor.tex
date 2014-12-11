@@ -1,12 +1,12 @@
 \section{Near Neighbor Search}\label{sec:nn}
 
 Fast retrieval of similar patches is crucial for making
-construction of a sizeable patch-based database feasible.
+construction of a sizable patch-based database feasible.
 This is essentially near-neighbor retrieval in
 relatively high dimensions $3 \cdot n^2$ (1875 for patch size $n=25$).
 Image retrieval has been addressed in a number of papers,
-including more complex feature respresentations ~\cite{perronnin2010large}.
-Our poblem is somewhat different from most of previous work
+including more complex feature representations ~\cite{perronnin2010large}.
+Our problem is somewhat different from most of previous work
 in that the variability
 in small patches is much less than in regular-sized images,
 semantic information is irrelevant, and vectors are much shorter
@@ -40,7 +40,7 @@ using a set of hashing functions that map
 a vector $P_i$ to its bin $b(P_i)$ such that:
 \begin{equation*}
 \begin{aligned}
-P[b(P_i) = b(P_j) | S(P_i, P_j < T)] > P_1\\
+P[b(P_i) = b(P_j) | S(P_i, P_j) < T] > P_1\\
 P[b(P_i) = b(P_j) | S(P_i, P_j) > cT] < P_2
 \end{aligned}
 \end{equation*}
@@ -57,10 +57,10 @@ in some table (say Table $L$), they are likely to end up in
 the same bin. This amounts to taking an OR over
 collisions in all the tables, amplifying probabilities.
 Implementing this scenario in the context
-of a databse incurrs a significant overhead, as for each
+of a database incurs a significant overhead, as for each
 patch $P_i$ we not only need to store the patch itself,
 but also $L$ hash indices. At near neighbor search time,
-queries must be made to all the hash tables, which incurrs significant
+queries must be made to all the hash tables, which incurs significant
 overhead in the database setting.
 
 High precision near neighbor search is not necessary
