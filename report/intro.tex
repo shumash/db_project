@@ -18,7 +18,7 @@ that:
 \begin{itemize}
 \item the database size is smaller than if full images were stored
 \item the images can be reconstructed from the database in real time
-\item the reconstructed images fulfill certain quality requirements (See Sec.~\ref{sec:analysis})
+\item the reconstructed images fulfill certain quality requirements (see sec.~\ref{sec:analysis})
 \end{itemize}
 These conflicts introduce a number of tradeoffs, such as size of
 the database versus image quality.
@@ -31,7 +31,7 @@ storing them in a database, and reconstructing stored images.
 In section \ref{sec:nn} we discuss how we accomplish the fast retrieval of similar patches via locality-sensitive-hashing, which is crucial to the feasibility of our system. In section \ref{sec:opt} we discuss other important database optimizations required for performance. 
 In section~\ref{sec:analysis}, we provide the analytical groundwork for
 selecting optimal image patch sizes, distance thresholds, and quality metrics
-appropriate for evaluation. Finally, in section~\ref{sec:performance}
-we evaluate our full working system on real data, using the analytical tools developed from the previous section. 
+appropriate for evaluation. Finally, in sections~\ref{sec:performance} and \ref{sec:qual},
+we quantitatively and qualitatively evaluate our full working system on real data, using the analytical tools developed from the previous section. 
 In addition, in section~\ref{sec:conclusion}, we briefly touch on applications that derive naturally
 from a patch database, including similar image retrieval and duplicate detection, as well as a fun photomosaic application. We conclude by discussing future extensions.
