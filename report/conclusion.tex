@@ -1,9 +1,10 @@
 \section{Conclusion}\label{sec:conclusion}
 
-\begin{edit}
-Summarize paper contributions
-\end{edit}
+We have presented in this paper a largely scalable lossy compression scheme which exploits indexing infrastructure provided by database management systems for efficient storage, and exploits the redundancy of large image databases to drastically reduce the storage cost.  In doing so, we compared three methods which exploited locality sensitive hashing for image indexing - a naive method which relied on random projections, a method which exploited the dimensionality reduction of principal component analysis, and a second PCA-based method which also aimed to make the storage process more efficient and provide qualitative image quality improvements by recognizing uniform patches in LUV color-space.  Our experiments demonstrated that the cost of image insertion for our PCA-based hashing grows at a much slower rate than the naive method.  Meanwhile, qualitative evaluation demonstrated that the reconstruction quality improved with our advanced methods while sacrificing little in additional patch storage.  Our methods allowed for patch matching far faster than brute force methods, which early experiments proved to be infeasibly slow.
 
+A few open questions remain.  Although most insertion strategies are likely bounded by a quadratic asymptotic runtime, it remains an open question what the \emph{expected} runtime of our hashing based insertion methods - although we empirically see the cost of each additional image scaling roughly linearly in database size, the trend remains to be proven.  While our insertion method is much faster than the brute force method, which we found to be intractably slow for our purposes,  it is an open question if a method exists which can still provide good compression and database growth guarantees while having a constant insertion cost.
+
+Finally, although we saw storage improvements in a regime of 10,000 images with good compression quality, we anticipate these trends to be more pronounced for very large databases of ~10,000,000 images or more. More experiments still need to be run to validate this belief empirically.
 
 \input{apps.tex}
 

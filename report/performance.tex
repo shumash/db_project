@@ -1,4 +1,4 @@
-\section{Evaluation and Discussion}\label{sec:performance}
+\section{Quantitative Evaluation}\label{sec:performance}
 
 Once the quality threshold is chosen, the key differentiator
 between the speed of database construction and the quality of
@@ -18,64 +18,60 @@ quantization into 864 bins, and non-uniform patches are handled with PCA NN
 \end{enumerate}
 We compare and contrast the effects of hashing on performance in
 Sec.~\ref{ssec:nn-eval}, and detail a qualitative evaluation of
-the results with a small user study in ~\ref{ssec:qual-eval}.
+the results with a user study in sec.~\ref{sec:qual}.
 
-\subsection{Evaluating NN Strategies}\label{ssec:nn-eval}
+Here we consider the quantitative performance of our system as we grow our database to 10K images.
+In fig.~\ref{fig:dict_growth} we see that as for the smaller tests in sec.~\ref{sec:analysis}, the growth of our patch dictionary is sub-linear, demonstrating increasing compression benefits as more images are added to the database. We show that this trend holds for all 3 of our NN methods (\emph{naive}, \emph{pca}, and \emph{pca+u}). Note that the \emph{naive} NN approach became infeasible as the dictionary grew, as can be demonstrated by the time required to upload each successive image into the database (see fig.~\ref{fig:upload_times}). Due to this behavior, it was terminated early. We see that the two approaches using the \emph{pca} NN scheme have significantly better time performance. This is because in the \emph{naive} approach, most of the data falls in relatively few bins. Making use of \emph{pca} helps by projecting data onto the directions of maximal variance, which helps to differentiate between patches, and thus redistribute them across multiple bins. Table \ref{tab:nn-res} includes a breakdown of the number of patches and bins produced in each of the NN approaches, as well as the timings to insert images. Also, because the \emph{naive} approach has fewer bins, it is easier to find a matching patch in a bin, and thus new patches are less frequently added to the dictionary. This explains the gap we see between the red and green/blue curves in fig.~\ref{fig:dict_growth}. Another way to look at this is to consider the average number of patches added per image (see fig.~\ref{fig:ave_patches_per_img}). As more and more images are added to the database, fewer patches are added to the dictionary. We can more clearly see the gap between the red and green/blue curves in this plot. Even though we do not see the dictionary size plateauing even for our 10K image database, the trends in fig.~\ref{fig:ave_patches_per_img} are promising, and show a decline in the number of patches being added. We believe that much bigger datasets should be investigated in future work to really see the plateau effect and gain the full benefits of our patch-based compression system. Note, however, that even personal image collections are often bigger than 10K images, so this is not an unreasonable requirement.
 
+ \begin{figure}
+%\hspace{-5mm}
+%\centering
+\includegraphics[width=1\linewidth]{fig_NN/dict_growth.jpg}
+\caption{}
+\label{fig:dict_growth}
+\end{figure}
 
+ \begin{figure}
+%\hspace{-5mm}
+%\centering
+\includegraphics[width=1\linewidth]{Figures/upload_times.png}
+\caption{}
+\label{fig:upload_times}
+\end{figure}
 
-\begin{edit}
-Zoya: fill in the following\\
-Graph1: fig\_NN/dict\_growth.jpg (img vs. num patches)\\
-Graph2: fig\_NN/bin\_cover.jpg (bins needed to cover percent of patches)
-Graph3: fig\_NN/ave\_patches\_per\_img.jpg\\
-1. explain that naive never finished \\
-2. explain Graph 1 \\
-3. explain why Naive has fewer patches \\
-4. explain why Naive ground to a halt (see Graph2: most of the data falls into
-few bins - PCA helps with this by projecting data onto directions
-of maximal variance to differentiate between patches) \\
-5. note that the DB is not large enough to be conclusive
-(personal photo collections are larger)\\
-6. state that Graph3 shows promise - average \# of patches/image is going down
-(also explain why there is a difference between the plots (or MAsha can do that)
-\end{edit}
-%FR - found ratio: Count(good match found)/Count(good match not found)
+ \begin{figure}
+%\hspace{-5mm}
+%\centering
+\includegraphics[width=1\linewidth]{fig_NN/bin_cover.jpg}
+\caption{}
+\label{fig:bin_cover}
+\end{figure}
+
+ \begin{figure}
+%\hspace{-5mm}
+%\centering
+\includegraphics[width=1\linewidth]{fig_NN/ave_patches_per_img.jpg}
+\caption{}
+\label{fig:ave_patches_per_img}
+\end{figure}
 
 % Table
 \begin{table*}
-\begin{tabular}{ | l | l | l | l | l | l | l | l | }
+\centering
+\begin{tabular}{ | c | c | c | c | c | c | c | }
 \hline
-& time & \#patches & \#bins & FR & Stime & FPQ & IRQ \\
+& \multicolumn{3}{|c|}{Up to 4.4K} & \multicolumn{3}{|c|}{Up to 10K} \\ \hline
+\textbf{method} & \textbf{time} & \textbf{\#patches} & \textbf{\#bins} & \textbf{time} & \textbf{\#patches} & \textbf{\#bins}\\
 \hline
-Naive NN & & & & & & & \\
-PCA NN & 7h27min & 3,309,583 & 2,751,235 & & & &  \\
-PCA + U NN & & & & & & &\\
-\hline
+naive & 18h20min & 1,384,080 & 670,928 & n/a & n/a & n/a \\ \hline
+pca & 1h54min & 1,473,592 & 1,282,768 & 7h27min & 3,309,583 & 2,751,235  \\ \hline
+pca+u & 2h5min & 1,456,059 & 1,275,827 & 10h56min & 3,281,241 & 2,742,888 \\ \hline
 \end{tabular}
 \caption{Results on 10,000 images samples from all
 the categories of the SUN database, where the rows
 are for naive projection hashing, PCA-based hashing and
 PCA-based hashing combine with uniform patch hashing.}
-\label{tb:nn-res}
+\label{tab:nn-res}
 \end{table*}
 
-PCA NN: Finished batch-upload of 10000 files in 26827397
-NAIVE NN: 7:35AM - 1:50AM for 4367 images
-
-
-
-\subsection{Quantitative Quality}\label{ssec:quant}
-\begin{edit}
-TODO
-\end{edit}
-
-
-\subsection{Qualitative Qualitative}\label{ssec:qual}
-\begin{edit}
-TODO
-\end{edit}
-
-\begin{edit}
-If time allows, insert sample image reconstructions from different categories
-\end{edit}
+\input{quality}
