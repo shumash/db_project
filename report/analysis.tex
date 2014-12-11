@@ -57,7 +57,7 @@ Assume, as before, that $d$ is the number of patches in \texttt{patch\_dict}.  I
 	c(k, d, m, n) = 8 k \left(\frac{m}{n}\right)^2 + 3  d  n^2
 \end{equation}.
 
-The first term is the cost of storing the pointer data, while the second term is the cost of storing the patches themselves.  The $8$ constant comes from the fact that we are dealing with very large image and patch tables ($ > 2 \times 10^9$ patches), and thus a \texttt{bigint} type is required to store the patch references.
+The first term is the cost of storing the pointer data, while the second term is the cost of storing the patches themselves.  The $8$ constant comes from the fact that each pointer is an int which requires $4$ bytes to store, and for each pointer we also need to store a $4$ byte hash value.  Note that when dealing with extremely large image collections, it is possible to have over $2^{32}$ patches; in this case a \texttt{bigint} would be required, changing the $8$ to a $12$ and slightly changing the subsequent analysis.  In practice, we also store a bit more metadata to make managing the database easier, so this analysis should be thought of more as an optimal bound on storage.
 
 Given these two equations, for a fixed $m$ and $n$, we can easily see that our compressive scheme becomes more space-efficient that storing the original images when:
 
