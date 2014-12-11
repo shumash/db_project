@@ -38,9 +38,9 @@ There will always be a trade-off between compression benefits (storage: patch di
 %(written by Andy): I think this should be moved earlier, after which the analysis is added.  Maybe we should add some stuff on the "quality gains" and add a plot for that, but there's not much we can probably do until later.
 %\end{edit}
 
-At larger patch granularities, each patch contains more image structure, and thus the probability that another patch contains the same or similar image content decreases with the number of pixels in a patch. At larger granularities it becomes increasingly harder to find matching patches in the patch dictionary, and the closest matching patches for textured regions might introduce artifacts (see fig.\ref{fig:patchsize}). At the same time, patches that are too small do not offer as efficient a compression strategy. We must balance the costs of storing pointers to patches for each image in our database, as well as all the patches themselves, against the costs of storing the images in their original form. This calculation is investigated further below. 
+At larger patch granularities, each patch contains more image structure, and thus the probability that another patch contains the same or similar image content decreases with the number of pixels in a patch. At larger granularities it becomes increasingly harder to find matching patches in the patch dictionary, and the closest matching patches for textured regions might introduce artifacts (see fig.\ref{fig:patchsize}). At the same time, patches that are too small do not offer as efficient a compression strategy. We must balance the costs of storing pointers to patches for each image in our database, as well as all the patches themselves, against the costs of storing the images in their original form. This calculation is investigated further below.
 
-%In the extreme case, a patch is equal to one pixel, so the probability of an identical color patch is $\frac{1}{255^3}$, assuming 3 color channels. This value is multiplied by itself as many times as there are pixels in a patch to find an identical patch. For our application, we are interested in similar patches, rather than identical ones (see sec.\ref{sec:simthresh}), and so this probability is higher but bounded by this value, and similarly scales with patch size. 
+%In the extreme case, a patch is equal to one pixel, so the probability of an identical color patch is $\frac{1}{255^3}$, assuming 3 color channels. This value is multiplied by itself as many times as there are pixels in a patch to find an identical patch. For our application, we are interested in similar patches, rather than identical ones (see sec.\ref{sec:simthresh}), and so this probability is higher but bounded by this value, and similarly scales with patch size.
 
 \subsubsection{Cost Evaluation}
 \label{sec:costeval}
@@ -79,7 +79,7 @@ As long as we choose a distance threshold such that new image patches get added 
 \subsection{Sampling strategies}
 \label{sec:sample}
 
-A patch dictionary can be built up incrementally, adding new patches as new images are added to the database. A potential problem with this approach is that image reconstruction quality will tend to decrease with the order in which images are added, such that images added to the database earlier will tend to have more patches that correspond to them (see Fig.\ref{fig:sampStrategy} for an example). A strategy with a more even distribution of reconstruction quality over images involves starting with a batch of images, and seeding the dictionary by randomly sampling patches from a set of images from the batch. This is the strategy we employ. 
+A patch dictionary can be built up incrementally, adding new patches as new images are added to the database. A potential problem with this approach is that image reconstruction quality will tend to decrease with the order in which images are added, such that images added to the database earlier will tend to have more patches that correspond to them (see Fig.\ref{fig:sampStrategy} for an example). A strategy with a more even distribution of reconstruction quality over images involves starting with a batch of images, and seeding the dictionary by randomly sampling patches from a set of images from the batch. This is the strategy we employ.
 
  \begin{figure}
 %\hspace{-25mm}
@@ -94,7 +94,7 @@ A patch dictionary can be built up incrementally, adding new patches as new imag
 \subsection{Distance Function}
 \label{sec:simthresh}
 
-Many image (more specifically, patch) distance functions are possible, each with its own distinct set of parameters that can be tweaked for the required application. Because we are dealing with patches of a size specifically chosen to increase within-patch homogeneity, we do not consider cases of patches containing objects (the most we expect is an object boundary or simple texture), and thus do not need to consider complex image similarity/distance functions (involving SIFT, GIST, and other computer vision features). We can constrain ourselves to color distance, and split a patch $P_i$ into 3 LUV color channels: $P_i(L), P_i(U), P_i(V)$. 
+Many image (more specifically, patch) distance functions are possible, each with its own distinct set of parameters that can be tweaked for the required application. Because we are dealing with patches of a size specifically chosen to increase within-patch homogeneity, we do not consider cases of patches containing objects (the most we expect is an object boundary or simple texture), and thus do not need to consider complex image similarity/distance functions (involving SIFT, GIST, and other computer vision features). We can constrain ourselves to color distance, and split a patch $P_i$ into 3 LUV color channels: $P_i(L), P_i(U), P_i(V)$.
 
 Then we consider two patches $P_i$ and $P_j$ similar when, given $n\times n$ patches, all of the following are true:
 \begin{align*}
@@ -105,7 +105,7 @@ Then we consider two patches $P_i$ and $P_j$ similar when, given $n\times n$ pat
 
 The $\frac{1}{n^2}$ term allows us to normalize for patch size, so that the threshold values chosen becomes independent of patch size. Here we constrain the average distance value of all the pixels in a patch to fit a threshold, whereas it is possible to have alternative constraints (where instead of the average, the maximal pixel difference or the variance of the pixel differences or some other measure over pixels in a patch, is compared to a threshold).
 
-Note additionally that if instead we fix a single threshold for the sum of the Euclidean differences in the 3 color channels as in: 
+Note additionally that if instead we fix a single threshold for the sum of the Euclidean differences in the 3 color channels as in:
 \begin{displaymath}
 \frac{1}{n^2}[||P_i(L) - P_j(L)||^2 + ||P_i(U) - P_j(U)||^2 + ||P_i(V) - P_j(V)||^2] < T
 \end{displaymath}
@@ -115,7 +115,7 @@ Multiple color channels are possible, but we choose to work in the (CIE)LUV colo
 
 \subsection{Distance Threshold}
 
-Choosing a threshold $T$ requires weighing the quantitative benefits of compression with the qualitatively poorer image reconstructions. We ran a number of experiments, varying the threshold, and quantitatively and qualitatively examining the results. We rescale each color channel to be between 0 and 1, in order to choose a threshold $T$ that is bounded by these values (and is independent of color representation). In fig. \ref{fig:perfGraphs} we plot a few small experiments (with 200 images) for demonstrative purposes. The images were $500\times 500$ pixels, and the patch size was $25\times 25$. We chose this patch size due to the discussion in \ref{sec:patchsize}. Below we consider a number of quantitative indicators for patch compression. 
+Choosing a threshold $T$ requires weighing the quantitative benefits of compression with the qualitatively poorer image reconstructions. We ran a number of experiments, varying the threshold, and quantitatively and qualitatively examining the results. We rescale each color channel to be between 0 and 1, in order to choose a threshold $T$ that is bounded by these values (and is independent of color representation). In fig. \ref{fig:perfGraphs} we plot a few small experiments (with 200 images) for demonstrative purposes. The images were $500\times 500$ pixels, and the patch size was $25\times 25$. We chose this patch size due to the discussion in \ref{sec:patchsize}. Below we consider a number of quantitative indicators for patch compression.
 
 In the set of graphs in the first column of fig. \ref{fig:perfGraphs}, we plot in blue the dictionary size against the number of images added to the database. We compare this to the total number of patches that would have been stored if no compression scheme was utilized (red dotted line). We can see that for all choices of threshold, the size of the patch dictionary grows slower than the total number of patches that would need to be added if all images were stored along with their original patches. The gap between the blue and red dotted lines is a measure of the storage savings. As the threshold becomes more stringent, the blue line approaches the red dotted line. Note additionally that as the threshold becomes smaller, patches are more likely to be reused from the same image than from other images when compressing an image, because only patches from the same image will be similar enough to other patches from this image.
 
@@ -124,7 +124,7 @@ The second column of fig. \ref{fig:perfGraphs} contains histograms indicating ho
 The third column of fig. \ref{fig:perfGraphs} contains an insertion history: for each image inserted into the database, we track how many of its patches were added to the patch dictionary. We can see that as the patch distance threshold decreases, most images contribute most of their patches. This provides similar information as the histogram (which is merely the cumulative), but allows us to monitor any temporal changes. The spikes to 0 in this graph are indicative of duplicate images, and are discussed further in sec. \ref{sec:apps}.
 
 In the final column of fig. \ref{fig:perfGraphs}, we see a sample image reconstruction. We can see that the reconstruction quality increases, and visual artifacts decrease, as the distance threshold decreases (becomes more stringent). At some point in the middle, the reconstruction is already indistinguishable from the original, but with significant database compression benefits. Thus, for further analysis we consider the threshold $T=8$ (recall that this is per color channel, and is independent of patch size).
-%Thus, given two patches $P_i$ and $P_j$, we can measure their similarity in a given color channel by taking the Euclidean distance of the color values across all the pixels. 
+%Thus, given two patches $P_i$ and $P_j$, we can measure their similarity in a given color channel by taking the Euclidean distance of the color values across all the pixels.
 
 %where a patch is a collection of pixels, each of which is defined to be a triplet of integer values, assuming a 3-D color space. For a patch $P_i$, let us define its 3 color channels to be: $P_i(1), P_i(2), P_i(3)$.
 
@@ -145,3 +145,21 @@ In the final column of fig. \ref{fig:perfGraphs}, we see a sample image reconstr
 \label{fig:perfGraphs}
 \end{figure*}
 
+\subsection{Generalization across image categories and sizes}
+\label{sec:growing_db}
+
+In the preceding sections, we determined that for an image sized $500\times 500$, a $25\times 25$ patch size with a $T=0.01$ patch distance threshold is appropriate since compression savings are properly balanced against artifacts introduced during image reconstruction. For further experiments, we scale down the image size to $100\times 100$ and the patch size to $5\times 5$, accordingly, maintaining the patch:image size ratio. Note that the distance threshold still applies as it is independent of patch size. The reduction in image size allows us to consider larger experiments on databases of image thumbnails.
+
+In fig. \ref{fig:bigsize} we consider the growth of the patch dictionary as we add 2K images to our database. We add images from different categories, and observe a slight change in dictionary growth rate for every new category added. Although there is some variation across categories, the overall compression is $18.95\%$ per image, demonstrating generalization across categories.
+
+ \begin{figure}
+\hspace{-5mm}
+%\centering
+\includegraphics[width=1.3\linewidth]{Figures/multiscenes.pdf}
+\caption{A patch dictionary constructed from $5\times 5$ patches from $100\times 100$ images, with a $T=0.01$ patch distance threshold, obtains an average compression of $18.95\%$ per image. The average number of new patches added per image is $330.70$ with a total dictionary size of $645,534$ patches representing 1952 images. The black dotted vertical lines mark the addition of new image categories, (left to right) mountain (with dictionary growth rate 312.96, equivalent to compression of $21.76\%$ per image), badlands (growth rate 330.50, compression $17.38\%$), canyon (growth rate: 360.61, compression $9.85\%$), and pasture (growth rate: 334.11, $16.47\%$). A few image samples from the 4 categories are included.  Note that for this growth rate, storing image patches will always take less space than storing the entire image, since $c < c'$.}
+\label{fig:bigsize}
+\end{figure}
+
+Not all image content is amenable to the same type of compression. For some types of images, particularly where there is a lot of spatial structure (e.g. indoors scenes with objects and parts), compression artifacts are much more noticeable and thus distance thresholds should be more stringent. An interesting extension that is beyond the score of this paper would be to have a content-aware distance threshold (self-adjusting to content type such as indoor vs outdoor/natural).
+
+For our database system, compression works for both indoor and outdoor images. In outdoor images, a lot of the compression savings come from accounting for the homogeneous sky patches (which may take up a large portion of the image). Although indoor images often contain many more objects and are more cluttered than outdoor images, they contain large homogenous regions corresponding to the walls and ceilings of rooms, which can surprisingly compress better than some outdoor images (walls may be more homogeneous than the sky). Thus, our compression approach generalizes to different types of scenes.
