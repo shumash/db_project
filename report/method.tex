@@ -2,7 +2,7 @@
 
 To limit the complexity, we assume
 each image to be a square of $m^2$ pixels, and for all patches to
-be squares of the same size, $n^2$.
+be squares of the same size, $n^2$ pixels.
 We formally describe our method in Sec.~\ref{sec:overview}. To summarize,
 we first segment each image into patches and store them in the \texttt{patch\_dict} table, a dictionary of patches.
 Only patches sufficiently different
@@ -19,7 +19,7 @@ Our method is governed by the following parameters:
 \item $m$ - The width and height of all images.
 \item $n$ - The width and height of all patches\footnote{We assume that $m \mod n$ is $0$.}.
 \item $k$ - The number of images in our database.
-\item $S$ - A distance function $S \colon \mathds{I}_{n \times n} \times \mathds{I}_{n \times n} \to \mathds{N}$, where we define $\mathds{I}_{n \times n}$ to be the space of all $n \times n$ image patches.  Section \ref{sec:sim} details distance measures.  The distance function should be at least a pseudometric, so $S(P_1, P_2) = 0$ if and only if patches $P_1$ and $P_2$ are the same.
+\item $S$ - A distance function $S \colon \mathds{I}_{n \times n} \times \mathds{I}_{n \times n} \to \mathds{N}$, where we define $\mathds{I}_{n \times n}$ to be the space of all $n \times n$ image patches.  Section \ref{sec:sim} details distance measures.  The distance function should be at least a pseudometric, so $S(P_1, P_2) = 0$ if and only if patches $P_1$ and $P_2$ are the same, and so that the triangle inequality holds.
 \item $T$ - A distance threshold, $T \in \mathds{R}$; used as a maximum value we allow on $S$ for patch mappings.
 
 \end{itemize}
@@ -28,7 +28,7 @@ It is worth noting that we propose a \emph{lossy} compression scheme ($T > 0$). 
 
 \subsection{Algorithm} \label{sec:alg}
 
-We begin our compression algorithm by seeding \texttt{patch\_dict} with an initial set of dictionary patches.  These patches are chosen from randomly selected $n \times n$ image patches from the entire image database (see sec. \ref{sec:sample} for a discussion of this seeding strategy).   During the image insertion step, we partition each of our images into $\left(\frac{m}{n}\right)^2$ non-overlapping patches, with the intent of mapping each image patch $P_j$ to a patch in \texttt{patch\_dict}.  Thus, rather than storing the original image patch for a given image, we simply store a pointer to a patch in \texttt{patch\_dict}.  The dictionary patch we choose is the one which is closest to the image patch according to some distance metric $S$, i.e. the patch $P_{NN}$ in \texttt{patch\_dict} such that $S(P_{NN}, P_j)$ is minimized.  If $S(P_{NN}, P_j) > T$, we then store $P_j$ as a new patch in \texttt{patch\_dict} and add a pointer to this dictionary patch from the image (at the corresponding $(x,y)$ location in the image).  Algorithm \ref{alg:insert} summarizes the image insertion procedure. Assuming that our patch dictionary is a good sample of the image patches in our image database, adding additional patches should be a relative rare procedure.  We discuss how often these extra insertions are needed in sec. \ref{sec:growing_db}. Thus, the space savings come from only needing to store an effective pointer for each image patch, rather than the entire patch data.  Note that the maximum threshold on the distance of image patches and dictionary patches guarantees that each compressed image is at most $\frac{mT}{n}$ away from its original counterpart in $S$.
+We begin our compression algorithm by seeding \texttt{patch\_dict} with an initial set of dictionary patches.  These patches are chosen from randomly selected $n \times n$ image patches from the entire image database (see sec. \ref{sec:sample} for a discussion of this seeding strategy).   During the image insertion step, we partition each of our images into $\left(\frac{m}{n}\right)^2$ non-overlapping patches, with the intent of mapping each image patch $P_j$ to a patch in \texttt{patch\_dict}.  Thus, rather than storing the original image patch for a given image, we simply store a pointer to a patch in \texttt{patch\_dict}.  The dictionary patch we choose is the one which is closest to the image patch according to some distance metric $S$, i.e. the patch $P_{NN}$ in \texttt{patch\_dict} such that $S(P_{NN}, P_j)$ is minimized.  If $S(P_{NN}, P_j) > T$, we then store $P_j$ as a new patch in \texttt{patch\_dict} and add a pointer from the image to this dictionary patch  (at the corresponding $(x,y)$ location in the image).  Algorithm \ref{alg:insert} summarizes the image insertion procedure. Assuming that our patch dictionary is a good sample of the image patches in our image database, adding additional patches should be a relatively rare procedure.  We discuss how often these extra insertions are needed in sec. \ref{sec:growing_db}. Thus, the space savings come from only needing to store an effective pointer for each image patch, rather than the entire patch data.  Note that the maximum threshold on the distance of image patches and dictionary patches guarantees that each compressed image is at most $\frac{mT}{n}$ away from its original counterpart in $S$.
 
 \begin{algorithm}
     \caption{Basic alg. to insert image $I$ into database}
@@ -76,7 +76,7 @@ Thus, our compression problem can formally be stated as choosing a selection of 
 
 where $c(\cdot, \cdot, \cdot, \cdot)$ is a cost function as defined in section \ref{sec:costeval}, $d$ is the number of patches in the dictionary (i.e. $d = |patch\_dict|$), and $k,m,n$ are as defined in \ref{sec:overview}.
 
-Given our pointer representation, we are able to construct the compressed image quite efficiently.  Given an image identifier, we iterate over all patch pointers stored with it, associated with each image location $(x,y)$.
+Given our pointer representation, we are able to construct the compressed image quite efficiently.  Given an image identifier, we iterate over all patch pointers stored with it, associated with each image location $(x,y)$, and simply insert the pointed to patch at that location.
 
 \subsection{Patch Distance Metric}\label{sec:sim}
 There are many image similarity/distance metrics that have been developed for
@@ -99,11 +99,11 @@ distance threshold independent of the patch size. See section \ref{sec:simthresh
 
 
 \subsection{Implementation}\label{sec:impl}
-We used $postgresql$ to construct our database, and used
+We used \emph{PostgreSQL} to construct our database, and used the
 Java API to talk to the database from a custom executable. Locality
 sensitive hashing, image segmentation and reconstruction were
 all implemented in Java, and used to construct a hash table
-on patches in $postgresql$.
+on patches in \emph{PostgreSQL}.
 
 Our code is available at:
 \begin{verbatim}
