@@ -4,7 +4,7 @@ A number of parameters can be tweaked to change the patch matching and storage, 
 
 Our quantitative performance metrics involve examining how the patch dictionary size grows with the addition of new images to the database (the growth function and rate) and the compression ratio per image (viewed as a distribution over compression ratios and summarized as the average compression ratio). Qualitative evaluations involve determining whether a human can spot compression artifacts and how salient they are in the images. The authors of this paper manually examined images reconstructed from the dictionary patches. A crowdsourced evaluation strategy would be more appropriate for larger-scale studies, but is beyond the scope of this paper.
 
-There will always be a trade-off between compression benefits (storage: patch dictionary size and speed: image reconstruction time), and reconstruction quality. For many computer vision tasks including scene recognition (and thus retrieval), imperfect reconstructions with artifacts may not be a problem as long as the overall scene structure does not change. For instance, \cite{tiny_images} has shown that with images of pixel dimension 32x32, humans are already able to achieve over $80\%$ scene and object recognition rate. See fig.\ref{fig:badrecon} for a demonstration of an image that has serious reconstruction artifacts, but when downsampled to a thumbnail, they become insignificant, and thus may have no impact on visual recognition.
+There will always be storage vs speed trade-offs between compression benefits (patch dictionary size vs image reconstruction time), and reconstruction quality. For many computer vision tasks including scene recognition (and thus retrieval), imperfect reconstructions with artifacts may not be a problem as long as the overall scene structure does not change. For instance, \cite{tiny_images} has shown that with images of pixel dimension 32x32, humans are already able to achieve over $80\%$ scene and object recognition rate. See fig.\ref{fig:badrecon} for a demonstration of an image that has serious reconstruction artifacts, but when downsampled to a thumbnail, they become insignificant, and thus may have no impact on visual recognition.
 
  \begin{figure}
 %\hspace{-25mm}
@@ -29,6 +29,7 @@ There will always be a trade-off between compression benefits (storage: patch di
 
 %We wish to construct a database that trades off minimizing the amount of required space with maximizing read and write speeds of the data.
 
+\newpage
 \subsection{Patch Size}
 \label{sec:patchsize}
 
