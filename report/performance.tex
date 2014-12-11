@@ -7,7 +7,7 @@ We constructed 3 databases on the same set of
 10,000 images sampled
 from all categories of the SUN database, with image size
 set to 500, and patch size set to 25, using the following
-hashing strategies for Near Neighbor(NN) search:\\
+hashing strategies for Near Neighbor(NN) search:
 \begin{enumerate}
 \item \textbf{Naive NN}: 10 random projection vectors sampled from unit Normal with
 uniform bin size (outliers truncated)
@@ -18,6 +18,7 @@ quantization into 864 bins, and non-uniform patches are handled with PCA NN
 \end{enumerate}
 We detail a qualitative evaluation of the results with a user study in sec.~\ref{sec:qual}.
 Here we consider the quantitative performance of our system as we grow our database to 10K images.
+
 In fig.~\ref{fig:dict_growth} we see that as for the smaller tests in sec.~\ref{sec:analysis}, the growth of our patch dictionary is sub-linear, demonstrating increasing compression benefits as more images are added to the database. We show that this trend holds for all 3 of our NN methods (\emph{naive}, \emph{pca}, and \emph{pca+u}). Note that the \emph{naive} NN approach became infeasible as the dictionary grew, as can be demonstrated by the time required to upload each successive image into the database (see fig.~\ref{fig:upload_times}). Due to this behavior, it was terminated early. We see that the two approaches using the \emph{pca} NN scheme have significantly better time performance. This is because in the \emph{naive} approach, most of the data falls in relatively few bins. Making use of \emph{pca} helps by projecting data onto the directions of maximal variance, which helps to differentiate between patches, and thus redistribute them across multiple bins. Table \ref{tab:nn-res} includes a breakdown of the number of patches and bins produced in each of the NN approaches, as well as the timings to insert images. Figure \ref{fig:bin_cover} demonstrates that in the \emph{naive} approach, the percent of patches that fall into the first bin already exceeds $50\%$, and over $70\%$ of the dictionary's patches are accounted for by the third bin. This explains why the \emph{naive} approach takes such a long time to run: it must go through a very big number of patches to determine whether to add new patches from an inserted image. Because the \emph{naive} approach has fewer bins, it is also easier to find a matching patch in a bin, and thus new patches are less frequently added to the dictionary, leading to higher compression ratios using this approach. This explains the gap we see between the red and green/blue curves in fig.~\ref{fig:dict_growth}a. Another way to look at this is to consider the average number of patches added per image (see fig.~\ref{fig:dict_growth}b). As more and more images are added to the database, fewer patches are added to the dictionary. We can more clearly see the gap between the red and green/blue curves in this plot. Even though we do not see the dictionary size plateauing even for our 10K image database, the trends in fig.~\ref{fig:dict_growth}b are promising, and show a decline in the number of patches being added. We believe that much bigger datasets should be investigated in future work to really see the plateau effect and gain the full benefits of our patch-based compression system. Note, however, that even personal image collections are often bigger than 10K images, so this is not an unreasonable requirement.
 
  \begin{figure*}
@@ -32,7 +33,7 @@ In fig.~\ref{fig:dict_growth} we see that as for the smaller tests in sec.~\ref{
  \begin{figure}
 \hspace{-10mm}
 %\centering
-\includegraphics[width=1.2\linewidth]{Figures/upload_times.png}
+\includegraphics[width=1\linewidth]{Figures/upload_times.png}
 \caption{As more images are added to the database, more patches are available in the dictionary. Thus, it is expected that we will need to look through more of the patches in order to determine if a matching patch already exists or if a new one should be added. The time to insert becomes infeasible in the case of the \emph{naive} approach because many patches end up in the first few bins (see fig.~\ref{fig:bin_cover}) requiring a linear search through all of them. The pca-based approaches allow patches to be more evenly distributed across bins which reduces the look-up time during insertion (fewer patches to examine in any given bin). Note: the weird behavior at the end of the green curve is an artifact of another process coming online at the same time as the database insertion procedure was run.}
 \label{fig:upload_times}
 \end{figure}
