@@ -20,7 +20,7 @@ that:
 \item the images can be reconstructed from the database in real time
 \item the reconstructed images fulfill certain quality requirements (see sec.~\ref{sec:analysis})
 \end{itemize}
-These conflicts introduce a number of tradeoffs, such as size of
+These goals introduce a number of tradeoffs, such as size of
 the database versus image quality.
 The goal of this paper is as much to produce a working system as to
 build up the analytical foundations that allow making these tradeoffs.
@@ -28,7 +28,7 @@ build up the analytical foundations that allow making these tradeoffs.
 Section \ref{sec:related} covers some related work on image compression, raster databases, and patch-based computer vision applications.
 In section~\ref{sec:method}, we explain our method of ``patchifying'' images,
 storing them in a database, and reconstructing stored images. 
-In section \ref{sec:nn} we discuss how we accomplish the fast retrieval of similar patches via locality-sensitive-hashing, which is crucial to the feasibility of our system. In section \ref{sec:opt} we discuss other important database optimizations required for performance. 
+In section \ref{sec:nn} we discuss how we accomplish the fast retrieval of similar patches via locality sensitive hashing (LSH), which is crucial to the feasibility of our system. In section \ref{sec:opt} we discuss other important database optimizations required for performance. 
 In section~\ref{sec:analysis}, we provide the analytical groundwork for
 selecting optimal image patch sizes, distance thresholds, and quality metrics
 appropriate for evaluation. Finally, in sections~\ref{sec:performance} and \ref{sec:qual},
