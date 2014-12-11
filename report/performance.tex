@@ -38,7 +38,7 @@ Even though we do not see the dictionary size plateauing even for our 10K image 
 
  \begin{figure}
 \hspace{-10mm}
-%\centering
+\centering
 \includegraphics[width=1\linewidth]{Figures/upload_times.png}
 \caption{As more images are added to the database, more patches are available in the dictionary. Thus, it is expected that we will need to look through more of the patches in order to determine if a matching patch already exists or if a new one should be added. The time to insert becomes infeasible in the case of the \emph{naive} approach because many patches end up in the first few bins (see fig.~\ref{fig:bin_cover}) requiring a linear search through all of them. The pca-based approaches allow patches to be more evenly distributed across bins which reduces the look-up time during insertion (fewer patches to examine in any given bin). Note: the weird behavior at the end of the green curve is an artifact of another process coming online at the same time as the database insertion procedure was run.}
 \label{fig:upload_times}
