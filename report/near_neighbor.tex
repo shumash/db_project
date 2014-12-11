@@ -57,11 +57,11 @@ in some table (say Table $L$), they are likely to end up in
 the same bin. This amounts to taking an OR over
 collisions in all the tables, amplifying probabilities.
 Implementing this scenario in the context
-of a database incurs a significant overhead, as for each
+of a database incurs a significant storage overhead, as for each
 patch $P_i$ we not only need to store the patch itself,
-but also $L$ hash indices. At near neighbor search time,
+but also $L$ hash indices. By the same token,
 queries must be made to all the hash tables, which incurs significant
-overhead in the database setting.
+overhead at near neighbor search time.
 
 High precision near neighbor search is not necessary
 for our application, and we focus, instead, on \emph{efficiency}.
@@ -82,7 +82,7 @@ hash function $\mathcal{G}$:
 \begin{equation}
 \mathcal{G}(P_i) = \mathtt{ConcatBits}(\mathcal{F}_1(P_i),...,\mathcal{F}_q(P_i))
 \end{equation}\label{eq:ampl}
-where $\mathtt{ConcatBits}$ simply allows a constant
+\noindent where $\mathtt{ConcatBits}$ simply allocates a constant
 number of bits to each hash and concatenates them into a single value.
 The probability that dis-similar patches collide with
 this amplified function is $(P_2)^q$, where $P_2$ is the
@@ -90,8 +90,7 @@ probability of collision using just one function in the family.
 We formalize our Near Neighbor search in Sec.~\ref{ssec:nn-lsh},
 and take a closer look at hashing functions in the following sections.
 In Sec.~\ref{ssec:naive-nn}, we introduce a common choice for a
- hash function family $\mathcal{F}$, and
-and optimize it for our application in Sec.~\ref{ssec:pca-nn}
+ hash function family $\mathcal{F}$, and optimize it for our application in Sec.~\ref{ssec:pca-nn}
 and \ref{ssec:uni-nn}.
 
 \subsection{Near-Neighbor Search with LSH}\label{ssec:nn-lsh}
@@ -100,8 +99,8 @@ Using a single amplified hash function $\mathcal{G}$, finding
 all likely neighbors of a patch simply amounts to computing
 its hash value and taking all the patches that fall into the
 same hash bin.
-Moreformally, we can define the function
-in Alg.~\ref{alg:insert2} as follows:
+More formally, we define our approach
+in alg.~\ref{alg:insert2} as follows:
 \begin{algorithmic}[1]
 \Statex \texttt{\textbf{FindLikelySimilarPatches}}($P_j$):
 \State $h \leftarrow \mathcal{G}$ (\texttt{ToVector($P_j$)})
@@ -117,7 +116,7 @@ A common choice for a hash function family $\mathcal{F}$ is
 the family of random projection functions. In this scheme,
 a given $\mathcal{F}_i(P_j) \in \mathcal{F}$ is evaluated by
 projecting $P_j$ onto a randomly chosen unit vector $v_i$,
-and binning the value into a randomly chosen bin (See Fig.~\ref{fig:lsh},
+and binning the value into a randomly chosen bin (see fig.~\ref{fig:lsh},
 where bins are uniform across dot product values:
 \begin{equation}
 \mathcal{F}_i(P_j) = \floor{\frac{P_i \cdot \mathbf{v}_i + b}{w}}
@@ -163,15 +162,15 @@ among the bins, avoiding database lookup of many potential
 neighbors, we propose a \emph{PCA-based hashing scheme}.
 Under this scheme, we run Principal Component Analysis (PCA)
 to compute directions of largest variance for typical image patches
-and use 10 first principal components as the projection
-directions (See Fig.~\ref{fig:pca}). This ensures that
+and use the 10 first principal components as the projection
+directions (see fig.~\ref{fig:pca}). This ensures that
 the projections of typical patches are as far apart as possible.
 To further optimize the binning, we project
-a set of patches (grey dots in Fig.~\ref{fig:pca}) onto each
-of principal component $\mathbf{v}_i$ (blue dots in Fig.~\ref{fig:pca}), and
+a set of patches (grey dots in fig.~\ref{fig:pca}) onto each
+principal component $\mathbf{v}_i$ (blue dots in fig.~\ref{fig:pca}), and
 approximate the distribution of the dot product
 values by a Gaussian $\mathcal{N}_i(\mu_i, \sigma_i)$
-(blue curve in Fig.~\ref{fig:pca}).
+(orange curve in fig.~\ref{fig:pca}).
 In order to bin a dot product value into one of 8 bins (3 bits/bin),
 we adapt the bin size to $\mu_i$ and $\sigma_i$.
 
@@ -182,19 +181,19 @@ of the L-channel (lightness) of the first 10 components.}
 \label{fig:lambdas}
 \end{figure}
 
-In our experimental setup we sampled patches from two distinct
-sets of 1000 images sampled uniformly from the SUN~\cite{SUN} database
+In our experimental setup we uniformly sampled patches from two distinct
+sets of 1000 images from the SUN~\cite{SUN} database
 (and distinct from the set of images we inserted into the database),
 and used the patches to:
 \begin{itemize}
 \item compute PCA vectors in Luv color scheme on the \texttt{train{\allowbreak} set}
-of 80,000 25x25 patches (See Fig.~\ref{fig:lambdas})
+of 80,000 25x25 patches (see fig.~\ref{fig:lambdas})
 \item compute distribution of typical projections on 10
 first principal components using the \texttt{dev{\allowbreak} set} of
-40,000 25x25 patches (See Fig.~\ref{fig:pca-distr}).
+40,000 25x25 patches (see fig.~\ref{fig:pca-distr}).
 \end{itemize}
 We found that this choice of a hashing function has \emph{a
-significant positive effect on performance}(See Sec.~\ref{sec:performance}).
+significant positive effect on performance} (see sec.~\ref{sec:performance}).
 
 \begin{figure}[ht!]
 \subfigure[Pitfalls of standard deviation]{
@@ -220,24 +219,24 @@ their quantized color. We experimented with using a different
 hashing scheme for patches that are nearly uniform, quantizing
 them into fewer than 1000 bins by the mean color.
 
-In order to determine if patch $P$ is uniformly colored, we first
+To determine if patch $P$ is uniformly colored, we first
 looked at the standard deviation $u_2$ of the patch in all channels, which is
-just the L-2 norm of $P-\mu(P)$, where $\mu{P}$ is a patch
+just the L2-norm of $P-\mu(P)$, where $\mu{P}$ is a patch
 with every pixel set to the mean of $P$.
-However, we found that the L-2 norm is in-sensitive to outliers
+However, we found that the L2-norm is insensitive to outliers
 (which are very apparent in color patches),
 and patches with similar $u_2$ values could appear both uniform
-and not-uniform (See Fig.~\ref{fig:color-stdev}).
+and nonuniform (see fig.~\ref{fig:color-stdev}).
 
-Instead, we decided to classify uniformity using $u_4$, an L-4 norm
-of $P-\mu(P)$, split into channels. Higher order forms tend
+Instead, we decided to classify uniformity using $u_4$, an L4-norm
+of $P-\mu(P)$, split into channels. Higher-order forms tend
 to collapse all values $< 1.0$ to zero, and expand all values $> 1.0$
 to infinity. Hence, we normalize the elements of $P-\mu(P)$ by
 our channel threshold $T$ to ensure this property. The best
-approach would pick uniformity thresholds on $u_4$ using
-a training set, but in the interests of time we hand-picked
-a threshold of $0.1$ for all the channels. See Fig.~\ref{fig:color-pnorm}
-for results of this classification on a random set of patches.
+approach would be to pick uniform thresholds on $u_4$ using
+a training set, but in the interest of time we hand-picked
+a threshold of $0.1$ for all the channels. See fig.~\ref{fig:color-pnorm}
+for results using this classification on a random set of patches.
 
 We evaluate the performance of PCA-based hashing compared to
-a hybrid PCA+uniform patch hashing in Sec.~\ref{sec:performance}.
+our hybrid PCA+uniform patch hashing in Sec.~\ref{sec:performance}.
